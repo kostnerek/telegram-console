@@ -188,6 +188,29 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
     dispatch({ type: "SET_EDITING_MESSAGE", payload: null });
   }, [dispatch]);
 
+  // Calculate terminal dimensions and panel sizes
+  const { columns: terminalWidth, rows: terminalRows } = useTerminalSize();
+  const chatListWidth = 35;
+  const mediaPanelWidth = Math.floor(terminalWidth * 0.4);
+  // MessageView width: fills remaining space, shrinks when media panel is open
+  const messageViewWidth = state.mediaPanel.isOpen
+    ? terminalWidth - chatListWidth - mediaPanelWidth
+    : terminalWidth - chatListWidth;
+
+  // Dynamic height budget
+  const isMinimal = state.uiMode === "minimal";
+  const modeIndicatorVisible = !!(state.replyingToMessage || state.editingMessage);
+  const inputReserved = 3 + (modeIndicatorVisible ? 1 : 0);
+  const headerReserved = isMinimal ? 0 : 3;
+  const statusReserved = isMinimal ? 0 : 3;
+  const connReserved = isMinimal && state.connectionState !== "connected" ? 1 : 0;
+  const MIN_BODY_HEIGHT = 5;
+  const bodyHeight = Math.max(
+    MIN_BODY_HEIGHT,
+    terminalRows - headerReserved - statusReserved - inputReserved - connReserved,
+  );
+  const panelHeight = bodyHeight;
+
   // Panel navigation and global keys (disabled when input is focused to not interfere with TextInput)
   useInput(
     (input, key) => {
@@ -242,10 +265,6 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
       if (input === "m" || input === "M") {
         const next = state.uiMode === "full" ? "minimal" : "full";
         dispatch({ type: "SET_UI_MODE", payload: next });
-        // focusedPanel can be "header" when this runs (checked via cast due to TS narrowing)
-        if (next === "minimal" && (state.focusedPanel as string) === "header") {
-          dispatch({ type: "SET_FOCUSED_PANEL", payload: "chatList" });
-        }
         const cfg = loadConfig();
         if (cfg) {
           saveConfig({ ...cfg, uiMode: next });
@@ -405,29 +424,6 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
   const isInputFocused = state.focusedPanel === "input";
   const isMediaPanelFocused = state.focusedPanel === "mediaPanel";
   const isLoadingOlder = state.selectedChatId ? state.loadingOlderMessages[state.selectedChatId] ?? false : false;
-
-  // Calculate terminal dimensions and panel sizes
-  const { columns: terminalWidth, rows: terminalRows } = useTerminalSize();
-  const chatListWidth = 35;
-  const mediaPanelWidth = Math.floor(terminalWidth * 0.4);
-  // MessageView width: fills remaining space, shrinks when media panel is open
-  const messageViewWidth = state.mediaPanel.isOpen
-    ? terminalWidth - chatListWidth - mediaPanelWidth
-    : terminalWidth - chatListWidth;
-
-  // Dynamic height budget
-  const isMinimal = state.uiMode === "minimal";
-  const modeIndicatorVisible = !!(state.replyingToMessage || state.editingMessage);
-  const inputReserved = 3 + (modeIndicatorVisible ? 1 : 0);
-  const headerReserved = isMinimal ? 0 : 3;
-  const statusReserved = isMinimal ? 0 : 3;
-  const connReserved = isMinimal && state.connectionState !== "connected" ? 1 : 0;
-  const MIN_BODY_HEIGHT = 5;
-  const bodyHeight = Math.max(
-    MIN_BODY_HEIGHT,
-    terminalRows - headerReserved - statusReserved - inputReserved - connReserved,
-  );
-  const panelHeight = bodyHeight;
 
   // Find the message for the media panel
   const mediaPanelMessage = useMemo(() => {

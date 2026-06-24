@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Box, useInput, useApp as useInkApp, useStdout } from "ink";
+import { Box, Text, useInput, useApp as useInkApp } from "ink";
 import { AppProvider, useApp } from "./state/context";
 import { ChatList } from "./components/ChatList";
 import { MessageView } from "./components/MessageView";
@@ -12,7 +12,8 @@ import { SettingsPanel } from "./components/SettingsPanel";
 import { LogoutPrompt } from "./components/LogoutPrompt";
 import { MediaPanel } from "./components/MediaPanel";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { hasConfig, loadConfigWithEnvOverrides, saveConfig, deleteSession, deleteAllData, loadSession, saveSession } from "./config";
+import { hasConfig, loadConfig, loadConfigWithEnvOverrides, saveConfig, deleteSession, deleteAllData, loadSession, saveSession } from "./config";
+import { useTerminalSize } from "./hooks/useTerminalSize";
 import { createTelegramService } from "./services/telegram";
 import { createMockTelegramService } from "./services/telegram.mock";
 import type { AppConfig, TelegramService, LogoutMode } from "./types";
@@ -22,10 +23,9 @@ interface MainAppProps {
   onLogout: (mode: LogoutMode) => void;
 }
 
-function MainApp({ telegramService, onLogout }: MainAppProps) {
+export function MainApp({ telegramService, onLogout }: MainAppProps) {
   const { state, dispatch } = useApp();
   const { exit } = useInkApp();
-  const { stdout } = useStdout();
   // Track highlighted chat by ID (not index) so it follows when chats reorder
   const [highlightedChatId, setHighlightedChatId] = useState<string | null>(null);
   const [messageIndex, setMessageIndex] = useState(0);
@@ -206,7 +206,7 @@ function MainApp({ telegramService, onLogout }: MainAppProps) {
         } else if (state.focusedPanel === "messages") {
           dispatch({ type: "SET_FOCUSED_PANEL", payload: "input" });
         } else if (state.focusedPanel === "input") {
-          dispatch({ type: "SET_FOCUSED_PANEL", payload: "header" });
+          dispatch({ type: "SET_FOCUSED_PANEL", payload: isMinimal ? "chatList" : "header" });
         }
         return;
       }
@@ -231,7 +231,7 @@ function MainApp({ telegramService, onLogout }: MainAppProps) {
           dispatch({ type: "SET_CURRENT_VIEW", payload: "chat" });
         } else if (state.focusedPanel === "messages") {
           dispatch({ type: "SET_FOCUSED_PANEL", payload: "chatList" });
-        } else if (state.focusedPanel === "chatList") {
+        } else if (state.focusedPanel === "chatList" && !isMinimal) {
           dispatch({ type: "SET_FOCUSED_PANEL", payload: "header" });
         }
         // mediaPanel escape is handled in MediaPanel component
@@ -239,6 +239,19 @@ function MainApp({ telegramService, onLogout }: MainAppProps) {
       }
 
       // Global shortcuts (when not in input)
+      if (input === "m" || input === "M") {
+        const next = state.uiMode === "full" ? "minimal" : "full";
+        dispatch({ type: "SET_UI_MODE", payload: next });
+        // focusedPanel can be "header" when this runs (checked via cast due to TS narrowing)
+        if (next === "minimal" && (state.focusedPanel as string) === "header") {
+          dispatch({ type: "SET_FOCUSED_PANEL", payload: "chatList" });
+        }
+        const cfg = loadConfig();
+        if (cfg) {
+          saveConfig({ ...cfg, uiMode: next });
+        }
+        return;
+      }
       if (input === "s" || input === "S") {
         dispatch({ type: "SET_CURRENT_VIEW", payload: "settings" });
         return;
@@ -394,17 +407,27 @@ function MainApp({ telegramService, onLogout }: MainAppProps) {
   const isLoadingOlder = state.selectedChatId ? state.loadingOlderMessages[state.selectedChatId] ?? false : false;
 
   // Calculate terminal dimensions and panel sizes
-  const terminalWidth = stdout?.columns ?? 80;
+  const { columns: terminalWidth, rows: terminalRows } = useTerminalSize();
   const chatListWidth = 35;
   const mediaPanelWidth = Math.floor(terminalWidth * 0.4);
   // MessageView width: fills remaining space, shrinks when media panel is open
   const messageViewWidth = state.mediaPanel.isOpen
     ? terminalWidth - chatListWidth - mediaPanelWidth
     : terminalWidth - chatListWidth;
-  // Panel height: visible rows (20) + header/border chrome (3) to match ChatList and MessageView
-  const visibleRows = 20;
-  const panelChrome = 3;
-  const panelHeight = visibleRows + panelChrome;
+
+  // Dynamic height budget
+  const isMinimal = state.uiMode === "minimal";
+  const modeIndicatorVisible = !!(state.replyingToMessage || state.editingMessage);
+  const inputReserved = 3 + (modeIndicatorVisible ? 1 : 0);
+  const headerReserved = isMinimal ? 0 : 3;
+  const statusReserved = isMinimal ? 0 : 3;
+  const connReserved = isMinimal && state.connectionState !== "connected" ? 1 : 0;
+  const MIN_BODY_HEIGHT = 5;
+  const bodyHeight = Math.max(
+    MIN_BODY_HEIGHT,
+    terminalRows - headerReserved - statusReserved - inputReserved - connReserved,
+  );
+  const panelHeight = bodyHeight;
 
   // Find the message for the media panel
   const mediaPanelMessage = useMemo(() => {
@@ -416,10 +439,12 @@ function MainApp({ telegramService, onLogout }: MainAppProps) {
 
   return (
     <Box flexDirection="column" height="100%">
-      <HeaderBar
-        isFocused={isHeaderFocused}
-        selectedButton={state.headerSelectedButton}
-      />
+      {!isMinimal && (
+        <HeaderBar
+          isFocused={isHeaderFocused}
+          selectedButton={state.headerSelectedButton}
+        />
+      )}
       {state.showLogoutPrompt ? (
         <Box flexGrow={1} alignItems="center" justifyContent="center">
           <LogoutPrompt onConfirm={handleLogoutConfirm} onCancel={handleLogoutCancel} />
@@ -435,6 +460,7 @@ function MainApp({ telegramService, onLogout }: MainAppProps) {
               onSelectChat={handleSelectChat}
               selectedIndex={chatIndex}
               isFocused={isChatListFocused}
+              height={panelHeight}
             />
             <MessageView
               isFocused={isMessagesFocused && !state.mediaPanel.isOpen}
@@ -445,6 +471,7 @@ function MainApp({ telegramService, onLogout }: MainAppProps) {
               isLoadingOlder={isLoadingOlder}
               canLoadOlder={canLoadOlder}
               width={messageViewWidth}
+              height={panelHeight}
               dispatch={dispatch}
               messageLayout={state.messageLayout}
               isGroupChat={selectedChat?.isGroup ?? false}
@@ -463,6 +490,13 @@ function MainApp({ telegramService, onLogout }: MainAppProps) {
               />
             )}
           </Box>
+          {isMinimal && state.connectionState !== "connected" && (
+            <Box paddingX={1}>
+              <Text color={state.connectionState === "connecting" ? "yellow" : "red"}>
+                ● {state.connectionState === "connecting" ? "Connecting…" : "Disconnected"}
+              </Text>
+            </Box>
+          )}
           <InputBar
             isFocused={isInputFocused}
             onSubmit={handleSendMessage}
@@ -476,10 +510,12 @@ function MainApp({ telegramService, onLogout }: MainAppProps) {
           />
         </>
       )}
-      <StatusBar
-        connectionState={state.connectionState}
-        focusedPanel={state.focusedPanel}
-      />
+      {!isMinimal && (
+        <StatusBar
+          connectionState={state.connectionState}
+          focusedPanel={state.focusedPanel}
+        />
+      )}
     </Box>
   );
 }

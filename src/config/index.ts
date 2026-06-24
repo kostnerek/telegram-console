@@ -7,7 +7,7 @@ import {
 } from "fs";
 import { join } from "path";
 import { homedir } from "os";
-import type { AppConfig, MessageLayout, UiMode } from "../types";
+import type { AppConfig, MessageLayout } from "../types";
 
 const CONFIG_FILENAME = "config.json";
 const DEFAULT_CONFIG_DIR = join(homedir(), ".config", "telegram-console");

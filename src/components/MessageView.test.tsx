@@ -137,6 +137,40 @@ describe("MessageView", () => {
     expect(lastFrame()).toMatchSnapshot();
   });
 
+  it("smaller height reduces the visible message window", () => {
+    const messages = Array.from({ length: 30 }, (_, i) => ({
+      id: i + 1,
+      senderId: "u1",
+      senderName: "Alice",
+      text: `msg ${i}`,
+      timestamp: new Date(0),
+      isOutgoing: false,
+    }));
+    const { lastFrame } = renderWithProvider(
+      <MessageView
+        isFocused
+        selectedChatTitle="Chat"
+        messages={messages}
+        selectedIndex={29}
+        width={50}
+        height={10}
+        dispatch={() => {}}
+        messageLayout="classic"
+        isGroupChat={false}
+        chatId="1"
+        sendReaction={async () => true}
+        removeReaction={async () => true}
+      />,
+    );
+    const frame = lastFrame() ?? "";
+    const shown = messages.filter((m) => frame.includes(m.text)).length;
+    // height 10 → visibleLines 6; with a scroll-up indicator far fewer than 30 are shown
+    expect(shown).toBeLessThan(30);
+    expect(shown).toBeGreaterThan(0);
+    // earlier messages are hidden, so the scroll-up indicator must appear
+    expect(frame).toContain("earlier");
+  });
+
   it("renders messages with reactions", () => {
     const messagesWithReactions: Message[] = [
       {

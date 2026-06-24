@@ -9,9 +9,6 @@ import { useFlash } from "../hooks/useFlash.js";
 import { useTelegramService } from "../state/context.js";
 import { FLASH_CONFIG } from "../config/flashConfig.js";
 
-const VISIBLE_LINES = 20;
-const TOTAL_HEIGHT = 24; // Match ChatList height
-
 interface MessageViewProps {
   isFocused: boolean;
   selectedChatTitle: string | null;
@@ -20,6 +17,7 @@ interface MessageViewProps {
   isLoadingOlder?: boolean;
   canLoadOlder?: boolean;
   width: number;
+  height?: number;
   dispatch: Dispatch<AppAction>;
   messageLayout: MessageLayout;
   isGroupChat: boolean;
@@ -104,6 +102,7 @@ function MessageViewInner({
   isLoadingOlder = false,
   canLoadOlder = false,
   width,
+  height = 24,
   dispatch,
   messageLayout,
   isGroupChat,
@@ -112,6 +111,7 @@ function MessageViewInner({
   sendReaction,
   removeReaction,
 }: MessageViewProps) {
+  const visibleLines = Math.max(1, height - 4);
   // Reaction picker state
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
   const [reactionPickerIndex, setReactionPickerIndex] = useState(0);
@@ -351,7 +351,7 @@ function MessageViewInner({
     }
 
     // Check if all messages fit
-    if (totalLines <= VISIBLE_LINES) {
+    if (totalLines <= visibleLines) {
       return {
         startIndex: 0,
         endIndex: total,
@@ -371,7 +371,7 @@ function MessageViewInner({
     let linesUsed = messageLineCounts[selectedIndex]!;
 
     // Calculate available lines (reserve space for potential indicators)
-    const availableLines = VISIBLE_LINES;
+    const availableLines = visibleLines;
 
     // Check if we're at the last message (no bottom indicator needed)
     const atLastMessage = selectedIndex === total - 1;
@@ -419,7 +419,7 @@ function MessageViewInner({
       showScrollUp: start > 0,
       showScrollDown: end < total,
     };
-  }, [chatMessages.length, selectedIndex, messageLineCounts, totalLines]);
+  }, [chatMessages.length, selectedIndex, messageLineCounts, totalLines, visibleLines]);
 
   // Get visible messages
   const visibleMessages = chatMessages.slice(startIndex, endIndex);
@@ -511,7 +511,7 @@ function MessageViewInner({
         borderStyle="round"
         borderColor={isFocused ? "cyan" : "blue"}
         width={width}
-        height={TOTAL_HEIGHT}
+        height={height}
         justifyContent="center"
         alignItems="center"
       >
@@ -526,7 +526,7 @@ function MessageViewInner({
       borderStyle="round"
       borderColor={isFocused ? "cyan" : "blue"}
       width={width}
-      height={TOTAL_HEIGHT}
+      height={height}
     >
       <Box
         paddingX={1}
@@ -539,7 +539,7 @@ function MessageViewInner({
         <Text bold color={isFocused ? "cyan" : undefined}>
           {selectedChatTitle}
         </Text>
-        {totalLines > VISIBLE_LINES && (
+        {totalLines > visibleLines && (
           <Text dimColor>
             {" "}
             ({selectedIndex + 1}/{chatMessages.length})
@@ -549,7 +549,7 @@ function MessageViewInner({
       <Box
         flexDirection="column"
         paddingX={1}
-        height={VISIBLE_LINES}
+        height={visibleLines}
         overflowY="hidden"
       >
         {isLoadingOlder && <Text dimColor> Loading older messages...</Text>}

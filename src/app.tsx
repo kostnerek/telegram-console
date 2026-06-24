@@ -604,7 +604,7 @@ export function App({ useMock = false, incognito = false }: AppProps) {
 
   return (
     <ErrorBoundary>
-      <AppProvider telegramService={telegramService}>
+      <AppProvider telegramService={telegramService} initialUiMode={config?.uiMode}>
         <MainApp telegramService={telegramService} onLogout={handleLogout} />
       </AppProvider>
     </ErrorBoundary>

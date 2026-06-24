@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useMemo, type Dispatch } from "react";
 import { appReducer, initialState, type AppState, type AppAction } from "./reducer";
-import type { TelegramService } from "../types";
+import type { TelegramService, UiMode } from "../types";
 
 // Split contexts to prevent unnecessary re-renders
 // Components needing only dispatch won't re-render when state changes
@@ -11,10 +11,15 @@ const TelegramServiceContext = createContext<TelegramService | null>(null);
 interface AppProviderProps {
   children: React.ReactNode;
   telegramService?: TelegramService | null;
+  initialUiMode?: UiMode;
 }
 
-export function AppProvider({ children, telegramService = null }: AppProviderProps) {
-  const [state, dispatch] = useReducer(appReducer, initialState);
+export function AppProvider({ children, telegramService = null, initialUiMode }: AppProviderProps) {
+  const [state, dispatch] = useReducer(
+    appReducer,
+    initialState,
+    (base) => (initialUiMode ? { ...base, uiMode: initialUiMode } : base),
+  );
 
   // Memoize telegramService to prevent context value changes
   const memoizedService = useMemo(() => telegramService, [telegramService]);

@@ -1,4 +1,4 @@
-import type { Chat, Message, ConnectionState, FocusedPanel, CurrentView, MessageLayout } from "../types";
+import type { Chat, Message, ConnectionState, FocusedPanel, CurrentView, MessageLayout, UiMode } from "../types";
 
 export interface InlinePreviewState {
   loading: boolean;
@@ -28,6 +28,7 @@ export interface AppState {
   mediaPanel: MediaPanelState;
   inlinePreviews: Map<number, InlinePreviewState>;
   messageLayout: MessageLayout;
+  uiMode: UiMode;
   replyingToMessage: Message | null;
   editingMessage: Message | null;
 }
@@ -59,6 +60,7 @@ export type AppAction =
   | { type: "SET_INLINE_PREVIEW_DATA"; payload: { messageId: number; imageData: string } }
   | { type: "SET_INLINE_PREVIEW_ERROR"; payload: { messageId: number; error: string } }
   | { type: "SET_MESSAGE_LAYOUT"; payload: MessageLayout }
+  | { type: "SET_UI_MODE"; payload: UiMode }
   // Reaction actions
   | { type: "ADD_REACTION"; payload: { chatId: string; messageId: number; emoji: string } }
   | { type: "REMOVE_REACTION"; payload: { chatId: string; messageId: number } }
@@ -87,6 +89,7 @@ export const initialState: AppState = {
   },
   inlinePreviews: new Map(),
   messageLayout: "classic",
+  uiMode: "full",
   replyingToMessage: null,
   editingMessage: null,
 };
@@ -311,6 +314,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case "SET_MESSAGE_LAYOUT":
       return { ...state, messageLayout: action.payload };
+
+    case "SET_UI_MODE":
+      return { ...state, uiMode: action.payload };
 
     case "ADD_REACTION": {
       const { chatId, messageId, emoji } = action.payload;

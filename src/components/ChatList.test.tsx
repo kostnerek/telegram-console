@@ -77,4 +77,21 @@ describe("ChatList", () => {
     );
     expect(lastFrame()).toMatchSnapshot();
   });
+
+  it("smaller height shows fewer chat rows", () => {
+    const chats = Array.from({ length: 40 }, (_, i) => ({
+      id: String(i),
+      title: `Chat ${i}`,
+      unreadCount: 0,
+      isGroup: false,
+    }));
+    const { lastFrame } = render(
+      <ChatList chats={chats} selectedChatId={null} onSelectChat={() => {}} selectedIndex={0} isFocused height={12} />,
+    );
+    const frame = lastFrame() ?? "";
+    const rowCount = chats.filter((c) => frame.includes(c.title)).length;
+    // height 12 → LIST_HEIGHT 6 visible rows, far fewer than 40
+    expect(rowCount).toBeLessThanOrEqual(6);
+    expect(rowCount).toBeGreaterThan(0);
+  });
 });

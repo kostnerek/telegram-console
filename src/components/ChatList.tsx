@@ -6,11 +6,9 @@ import { useTelegramService } from "../state/context.js";
 import { FLASH_CONFIG } from "../config/flashConfig.js";
 
 // Layout constants
-const LIST_HEIGHT = 18; // Number of chat items to show
 const INDICATOR_LINES = 2; // Top and bottom scroll indicators
 const HEADER_LINES = 2; // Header text + border
 const BORDER_LINES = 2; // Round border top + bottom
-const TOTAL_HEIGHT = LIST_HEIGHT + INDICATOR_LINES + HEADER_LINES + BORDER_LINES; // 24
 
 // Memoized row component
 const ChatRow = memo(function ChatRow({
@@ -55,13 +53,15 @@ interface ChatListProps {
   onSelectChat: (chatId: string) => void;
   selectedIndex: number;
   isFocused: boolean;
+  height?: number;
 }
 
-function ChatListInner({ chats, selectedChatId, onSelectChat: _onSelectChat, selectedIndex, isFocused }: ChatListProps) {
+function ChatListInner({ chats, selectedChatId, onSelectChat: _onSelectChat, selectedIndex, isFocused, height = 24 }: ChatListProps) {
+  const listHeight = Math.max(1, height - (INDICATOR_LINES + HEADER_LINES + BORDER_LINES));
   const { visibleChats, visibleStartIndex, itemsAbove, itemsBelow } = useMemo(() => {
     const total = chats.length;
 
-    if (total <= LIST_HEIGHT) {
+    if (total <= listHeight) {
       return {
         visibleChats: chats,
         visibleStartIndex: 0,
@@ -70,9 +70,9 @@ function ChatListInner({ chats, selectedChatId, onSelectChat: _onSelectChat, sel
       };
     }
 
-    let start = Math.max(0, selectedIndex - Math.floor(LIST_HEIGHT / 2));
-    start = Math.min(start, total - LIST_HEIGHT);
-    const end = start + LIST_HEIGHT;
+    let start = Math.max(0, selectedIndex - Math.floor(listHeight / 2));
+    start = Math.min(start, total - listHeight);
+    const end = start + listHeight;
 
     return {
       visibleChats: chats.slice(start, end),
@@ -80,7 +80,7 @@ function ChatListInner({ chats, selectedChatId, onSelectChat: _onSelectChat, sel
       itemsAbove: start,
       itemsBelow: total - end,
     };
-  }, [chats, selectedIndex]);
+  }, [chats, selectedIndex, listHeight]);
 
   const { startFlash, stopFlash, isFlashing } = useFlash();
   const telegramService = useTelegramService();
@@ -109,12 +109,12 @@ function ChatListInner({ chats, selectedChatId, onSelectChat: _onSelectChat, sel
       borderStyle="round"
       borderColor={isFocused ? "cyan" : "blue"}
       width={35}
-      height={TOTAL_HEIGHT}
+      height={height}
     >
       {/* Header */}
       <Box paddingX={1} borderStyle="single" borderBottom borderLeft={false} borderRight={false} borderTop={false}>
         <Text bold color={isFocused ? "cyan" : undefined}>Chats</Text>
-        {chats.length > LIST_HEIGHT && (
+        {chats.length > listHeight && (
           <Text dimColor> ({selectedIndex + 1}/{chats.length})</Text>
         )}
       </Box>

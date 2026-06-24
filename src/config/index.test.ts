@@ -26,6 +26,7 @@ describe("Config", () => {
       logLevel: "info" as const,
       authMethod: "qr" as const,
       messageLayout: "classic" as const,
+      uiMode: "full" as const,
     };
 
     saveConfig(config, TEST_CONFIG_DIR);
@@ -68,6 +69,7 @@ describe("Environment Overrides", () => {
       logLevel: "info" as const,
       authMethod: "qr" as const,
       messageLayout: "classic" as const,
+      uiMode: "full" as const,
     };
     saveConfig(config, TEST_CONFIG_DIR);
 

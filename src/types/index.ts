@@ -4,6 +4,7 @@ export type LogLevel = "quiet" | "info" | "verbose";
 export type SessionMode = "persistent" | "ephemeral";
 export type AuthMethod = "qr" | "phone";
 export type MessageLayout = "classic" | "bubble";
+export type UiMode = "full" | "minimal";
 
 export interface AppConfig {
   apiId: number | string;
@@ -12,6 +13,7 @@ export interface AppConfig {
   logLevel: LogLevel;
   authMethod: AuthMethod;
   messageLayout: MessageLayout;
+  uiMode: UiMode;
 }
 
 export type ConnectionState = "disconnected" | "connecting" | "connected";

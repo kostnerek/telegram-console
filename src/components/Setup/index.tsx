@@ -93,6 +93,7 @@ export function Setup({ onComplete, preferredAuthMethod }: SetupProps) {
         logLevel: "info",
         authMethod: "qr",
         messageLayout: "classic",
+        uiMode: "full",
       };
 
       // Small delay to show success message

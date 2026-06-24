@@ -4,8 +4,6 @@ import React from "react";
 import { App } from "./app";
 import { AppProvider } from "./state/context";
 import { createMockTelegramService } from "./services/telegram.mock";
-// MainApp is not exported, so we test via App wrapper with mock
-// but for minimal mode we need direct access — import the named export
 import { MainApp } from "./app";
 
 describe("App Integration", () => {

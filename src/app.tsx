@@ -234,6 +234,20 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
         return;
       }
 
+      // Toggle minimal/full UI mode (works from any panel)
+      if (input === "m" || input === "M") {
+        const next = state.uiMode === "full" ? "minimal" : "full";
+        dispatch({ type: "SET_UI_MODE", payload: next });
+        if (next === "minimal" && state.focusedPanel === "header") {
+          dispatch({ type: "SET_FOCUSED_PANEL", payload: "chatList" });
+        }
+        const cfg = loadConfig();
+        if (cfg) {
+          saveConfig({ ...cfg, uiMode: next });
+        }
+        return;
+      }
+
       // Header panel navigation
       if (state.focusedPanel === "header") {
         if (key.escape) {
@@ -258,17 +272,6 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
           dispatch({ type: "SET_FOCUSED_PANEL", payload: "header" });
         }
         // mediaPanel escape is handled in MediaPanel component
-        return;
-      }
-
-      // Global shortcuts (when not in input)
-      if (input === "m" || input === "M") {
-        const next = state.uiMode === "full" ? "minimal" : "full";
-        dispatch({ type: "SET_UI_MODE", payload: next });
-        const cfg = loadConfig();
-        if (cfg) {
-          saveConfig({ ...cfg, uiMode: next });
-        }
         return;
       }
       if (input === "s" || input === "S") {

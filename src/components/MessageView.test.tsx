@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { render } from "ink-testing-library";
 import React from "react";
-import { MessageView } from "./MessageView";
+import { MessageView, countWrappedLines } from "./MessageView";
 import { AppProvider } from "../state/context";
 import type { Message } from "../types";
 
@@ -205,5 +205,27 @@ describe("MessageView", () => {
     const frame = lastFrame() ?? "";
     expect(frame).toContain("👍");
     expect(frame).toContain("❤️");
+  });
+});
+
+describe("countWrappedLines", () => {
+  it("returns 1 for a line that fits", () => {
+    expect(countWrappedLines("hello", 20)).toBe(1);
+    expect(countWrappedLines("", 20)).toBe(1);
+  });
+
+  it("wraps on word boundaries (greedy)", () => {
+    // "aaa bbb" = 7 fits; "ccc" wraps -> 2 rows
+    expect(countWrappedLines("aaa bbb ccc", 7)).toBe(2);
+  });
+
+  it("hard-wraps a single word longer than the width", () => {
+    // 10 chars at width 4 -> ceil(10/4) = 3 rows
+    expect(countWrappedLines("abcdefghij", 4)).toBe(3);
+  });
+
+  it("never under-counts a realistic line", () => {
+    // "Too late, already filed paperwork for xChat" at width 20 -> 3 rows
+    expect(countWrappedLines("Too late, already filed paperwork for xChat", 20)).toBe(3);
   });
 });

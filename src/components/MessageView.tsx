@@ -39,6 +39,32 @@ function formatTime(date: Date): string {
   });
 }
 
+export function countWrappedLines(line: string, width: number): number {
+  if (width <= 0 || line.length <= width) return 1;
+  const words = line.split(" ");
+  let rows = 1;
+  let col = 0; // characters used on the current row
+  for (const word of words) {
+    if (word.length > width) {
+      // Long word hard-wraps onto its own rows.
+      if (col > 0) rows++;
+      const wordRows = Math.ceil(word.length / width);
+      rows += wordRows - 1;
+      const rem = word.length % width;
+      col = rem === 0 ? width : rem;
+      continue;
+    }
+    const needed = col === 0 ? word.length : col + 1 + word.length;
+    if (needed <= width) {
+      col = needed;
+    } else {
+      rows++;
+      col = word.length;
+    }
+  }
+  return rows;
+}
+
 function formatReactions(reactions: Message["reactions"]): string {
   if (!reactions || reactions.length === 0) return "";
   return (
@@ -59,7 +85,7 @@ function getMessageLineCount(msg: Message, _isSelected: boolean, availableWidth:
   if (availableWidth <= 0) return lines.length;
   let total = 0;
   for (const line of lines) {
-    total += Math.max(1, Math.ceil(line.length / availableWidth));
+    total += countWrappedLines(line, availableWidth);
   }
   return total;
 }
@@ -73,7 +99,7 @@ function getBubbleMessageLineCount(msg: Message, isGroupChat: boolean, available
     textLines = lines.length;
   } else {
     for (const line of lines) {
-      textLines += Math.max(1, Math.ceil(line.length / availableWidth));
+      textLines += countWrappedLines(line, availableWidth);
     }
   }
   // name line (if group + not outgoing) + text lines (timestamp is inline on last line)

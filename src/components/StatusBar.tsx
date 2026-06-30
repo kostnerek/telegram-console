@@ -47,7 +47,7 @@ function StatusBarInner({ connectionState, focusedPanel }: StatusBarProps) {
 
   return (
     <Box borderStyle="round" paddingX={1} justifyContent="space-between">
-      <Text>
+      <Text wrap="truncate">
         [
         <Text color={getStatusColor(connectionState)}>
           {getStatusText(connectionState)}
@@ -57,7 +57,7 @@ function StatusBarInner({ connectionState, focusedPanel }: StatusBarProps) {
           {focusedPanel.toUpperCase()}
         </Text>
       </Text>
-      <Text dimColor>{getHints()}</Text>
+      <Text dimColor wrap="truncate">{getHints()}</Text>
     </Box>
   );
 }

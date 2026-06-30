@@ -296,3 +296,16 @@ describe("appReducer", () => {
     });
   });
 });
+
+describe("appReducer SET_HIDDEN", () => {
+  it("defaults isHidden to false", () => {
+    expect(initialState.isHidden).toBe(false);
+  });
+
+  it("sets isHidden true then false", () => {
+    const hidden = appReducer(initialState, { type: "SET_HIDDEN", payload: true });
+    expect(hidden.isHidden).toBe(true);
+    const shown = appReducer(hidden, { type: "SET_HIDDEN", payload: false });
+    expect(shown.isHidden).toBe(false);
+  });
+});

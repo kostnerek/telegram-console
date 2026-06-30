@@ -228,4 +228,9 @@ describe("countWrappedLines", () => {
     // "Too late, already filed paperwork for xChat" at width 20 -> 3 rows
     expect(countWrappedLines("Too late, already filed paperwork for xChat", 20)).toBe(3);
   });
+
+  it("counts leading whitespace and never under-counts", () => {
+    // " abc" is 4 chars at width 3 -> at least 2 rows
+    expect(countWrappedLines(" abc", 3)).toBe(2);
+  });
 });

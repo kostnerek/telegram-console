@@ -45,6 +45,16 @@ export function countWrappedLines(line: string, width: number): number {
   let rows = 1;
   let col = 0; // characters used on the current row
   for (const word of words) {
+    if (word.length === 0) {
+      // Empty token = a space char (leading space or a run of spaces); it occupies one column.
+      if (col + 1 <= width) {
+        col += 1;
+      } else {
+        rows++;
+        col = 1;
+      }
+      continue;
+    }
     if (word.length > width) {
       // Long word hard-wraps onto its own rows.
       if (col > 0) rows++;

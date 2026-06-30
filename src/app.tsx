@@ -8,7 +8,6 @@ import { isNarrowLayout, getMessageViewWidth } from "./layout";
 import { InputBar } from "./components/InputBar";
 import { StatusBar } from "./components/StatusBar";
 import { Setup } from "./components/Setup";
-import { WelcomeSplash } from "./components/WelcomeSplash";
 import { HeaderBar } from "./components/HeaderBar";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { LogoutPrompt } from "./components/LogoutPrompt";
@@ -567,8 +566,6 @@ export function App({ useMock = false, incognito = false }: AppProps) {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [telegramService, setTelegramService] = useState<TelegramService | null>(null);
   const [isSetupComplete, setIsSetupComplete] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [userName, setUserName] = useState("");
 
   useEffect(() => {
     if (hasConfig()) {
@@ -606,22 +603,6 @@ export function App({ useMock = false, incognito = false }: AppProps) {
     }
   }, [isSetupComplete, config, useMock, incognito]);
 
-  // Fetch user name and show welcome after service is ready
-  useEffect(() => {
-    if (telegramService && !showWelcome && userName === "") {
-      telegramService.connect().then(async () => {
-        try {
-          // Get user info - we need to access the underlying client
-          // For now, use a placeholder; this will be enhanced
-          setUserName("User");
-          setShowWelcome(true);
-        } catch {
-          setShowWelcome(true);
-        }
-      });
-    }
-  }, [telegramService, showWelcome, userName]);
-
   const handleSetupComplete = useCallback((newConfig: AppConfig, session: string) => {
     saveConfig(newConfig);
     // Save session string to config directory (skip in incognito mode)
@@ -632,10 +613,6 @@ export function App({ useMock = false, incognito = false }: AppProps) {
     setIsSetupComplete(true);
   }, [incognito]);
 
-  const handleWelcomeDismiss = useCallback(() => {
-    setShowWelcome(false);
-  }, []);
-
   const handleLogout = useCallback((mode: LogoutMode) => {
     if (telegramService) {
       telegramService.disconnect();
@@ -644,8 +621,6 @@ export function App({ useMock = false, incognito = false }: AppProps) {
       deleteSession();
       // Return to QR auth - keep config, clear setup state
       setTelegramService(null);
-      setShowWelcome(false);
-      setUserName("");
       // Re-trigger setup but skip to auth step
       setIsSetupComplete(false);
     } else {
@@ -653,8 +628,6 @@ export function App({ useMock = false, incognito = false }: AppProps) {
       // Full reset - clear everything
       setConfig(null);
       setTelegramService(null);
-      setShowWelcome(false);
-      setUserName("");
       setIsSetupComplete(false);
     }
   }, [telegramService]);
@@ -670,10 +643,6 @@ export function App({ useMock = false, incognito = false }: AppProps) {
 
   if (!telegramService) {
     return null;
-  }
-
-  if (showWelcome) {
-    return <WelcomeSplash onContinue={handleWelcomeDismiss} />;
   }
 
   return (

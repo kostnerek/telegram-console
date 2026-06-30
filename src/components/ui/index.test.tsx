@@ -1,52 +1,61 @@
-import { describe, it, expect, beforeAll, afterAll } from "bun:test";
+import { describe, it, expect } from "bun:test";
 import { render } from "ink-testing-library";
 import React from "react";
-import chalk from "chalk";
-import { Box, Text } from "./index";
+import { Box, Text, stripTextColor, stripBoxColor } from "./index";
 import { ColorModeContext } from "./ColorModeContext";
 
-// Force chalk to emit ANSI in the (non-TTY) test env so we can assert color
-// presence/absence. Restore afterward so other test files' snapshots are unaffected.
-let originalLevel: typeof chalk.level;
-beforeAll(() => { originalLevel = chalk.level; chalk.level = 3; });
-afterAll(() => { chalk.level = originalLevel; });
+// The test environment is non-TTY, so Ink emits no ANSI in lastFrame() and the
+// color-stripping cannot be observed from rendered output. We therefore test the
+// prop-stripping logic directly via the pure helpers, and use rendering only as a
+// smoke test that the wrappers still produce correct text/border content.
 
-describe("color-mode wrappers", () => {
-  it("emits color when context is false (default)", () => {
-    const frame = render(<Text color="red">hi</Text>).lastFrame() ?? "";
-    expect(frame).toContain("hi");
-    expect(/\[31m/.test(frame)).toBe(true); // red foreground present
+describe("stripTextColor", () => {
+  it("returns props unchanged when colors are enabled", () => {
+    const props = { color: "red", backgroundColor: "blue", inverse: true, children: "x" } as const;
+    expect(stripTextColor(props, false)).toBe(props);
   });
 
-  it("strips color when context is true but keeps inverse", () => {
-    const plain =
+  it("drops color and backgroundColor but keeps formatting when monochrome", () => {
+    const result = stripTextColor(
+      { color: "red", backgroundColor: "blue", inverse: true, bold: true, dimColor: true, children: "x" },
+      true,
+    );
+    expect("color" in result).toBe(false);
+    expect("backgroundColor" in result).toBe(false);
+    expect(result.inverse).toBe(true);
+    expect(result.bold).toBe(true);
+    expect(result.dimColor).toBe(true);
+    expect(result.children).toBe("x");
+  });
+});
+
+describe("stripBoxColor", () => {
+  it("returns props unchanged when colors are enabled", () => {
+    const props = { borderStyle: "round", borderColor: "cyan" } as const;
+    expect(stripBoxColor(props, false)).toBe(props);
+  });
+
+  it("drops borderColor but keeps borderStyle when monochrome", () => {
+    const result = stripBoxColor({ borderStyle: "round", borderColor: "cyan" }, true);
+    expect("borderColor" in result).toBe(false);
+    expect(result.borderStyle).toBe("round");
+  });
+});
+
+describe("wrappers (render smoke tests)", () => {
+  it("renders text content in both color modes", () => {
+    expect(render(<Text color="red">hi</Text>).lastFrame()).toContain("hi");
+    const mono =
       render(
         <ColorModeContext.Provider value={true}>
           <Text color="red">hi</Text>
         </ColorModeContext.Provider>
       ).lastFrame() ?? "";
-    expect(plain).toContain("hi");
-    expect(/\[31m/.test(plain)).toBe(false); // no red
-
-    const inv =
-      render(
-        <ColorModeContext.Provider value={true}>
-          <Text inverse>hi</Text>
-        </ColorModeContext.Provider>
-      ).lastFrame() ?? "";
-    expect(/\[7m/.test(inv)).toBe(true); // inverse modifier survives
+    expect(mono).toContain("hi");
   });
 
-  it("Box drops borderColor in mono but still draws the border", () => {
-    const colored =
-      render(
-        <Box borderStyle="round" borderColor="cyan">
-          <Text>x</Text>
-        </Box>
-      ).lastFrame() ?? "";
-    expect(/\[36m/.test(colored)).toBe(true); // cyan border present
-
-    const mono =
+  it("still draws the border when borderColor is dropped in monochrome", () => {
+    const frame =
       render(
         <ColorModeContext.Provider value={true}>
           <Box borderStyle="round" borderColor="cyan">
@@ -54,7 +63,7 @@ describe("color-mode wrappers", () => {
           </Box>
         </ColorModeContext.Provider>
       ).lastFrame() ?? "";
-    expect(mono).toContain("╭"); // border characters still drawn
-    expect(/\[36m/.test(mono)).toBe(false); // but no cyan color code
+    expect(frame).toContain("╭");
+    expect(frame).toContain("x");
   });
 });

@@ -94,4 +94,17 @@ describe("ChatList", () => {
     expect(rowCount).toBeLessThanOrEqual(6);
     expect(rowCount).toBeGreaterThan(0);
   });
+
+  it("renders the container at the given width", () => {
+    const chats = [{ id: "1", title: "Alpha", unreadCount: 0, isGroup: false }];
+    const wide = render(
+      <ChatList chats={chats} selectedChatId={null} onSelectChat={() => {}} selectedIndex={0} isFocused={false} />
+    ).lastFrame() ?? "";
+    expect(wide.split("\n")[0]!.length).toBe(35); // default width
+
+    const narrowBox = render(
+      <ChatList chats={chats} selectedChatId={null} onSelectChat={() => {}} selectedIndex={0} isFocused={false} width={20} />
+    ).lastFrame() ?? "";
+    expect(narrowBox.split("\n")[0]!.length).toBe(20);
+  });
 });

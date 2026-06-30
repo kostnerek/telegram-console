@@ -16,7 +16,6 @@ describe("App Integration", () => {
     const { lastFrame } = render(<App useMock />);
     const frame = lastFrame();
     // Without config, Setup is shown first (which contains "Welcome to telegram-console!")
-    // WelcomeSplash is shown after setup completes
     expect(frame).toContain("Welcome to telegram-console");
   });
 });

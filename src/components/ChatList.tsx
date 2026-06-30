@@ -54,9 +54,10 @@ interface ChatListProps {
   selectedIndex: number;
   isFocused: boolean;
   height?: number;
+  width?: number;
 }
 
-function ChatListInner({ chats, selectedChatId, onSelectChat: _onSelectChat, selectedIndex, isFocused, height = 24 }: ChatListProps) {
+function ChatListInner({ chats, selectedChatId, onSelectChat: _onSelectChat, selectedIndex, isFocused, height = 24, width = 35 }: ChatListProps) {
   const listHeight = Math.max(1, height - (INDICATOR_LINES + HEADER_LINES + BORDER_LINES));
   const { visibleChats, visibleStartIndex, itemsAbove, itemsBelow } = useMemo(() => {
     const total = chats.length;
@@ -108,7 +109,7 @@ function ChatListInner({ chats, selectedChatId, onSelectChat: _onSelectChat, sel
       flexDirection="column"
       borderStyle="round"
       borderColor={isFocused ? "cyan" : "blue"}
-      width={35}
+      width={width}
       height={height}
     >
       {/* Header */}

@@ -4,7 +4,7 @@ import { AppProvider, useApp } from "./state/context";
 import { ChatList } from "./components/ChatList";
 import { ChatStrip } from "./components/ChatStrip";
 import { MessageView } from "./components/MessageView";
-import { isNarrowLayout, getMessageViewWidth } from "./layout";
+import { isNarrowLayout, getChatListWidth, getMessageViewWidth } from "./layout";
 import { InputBar } from "./components/InputBar";
 import { StatusBar } from "./components/StatusBar";
 import { Setup } from "./components/Setup";
@@ -497,6 +497,7 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
                 selectedIndex={chatIndex}
                 isFocused={isChatListFocused}
                 height={panelHeight}
+                width={getChatListWidth(terminalWidth)}
               />
             )}
             <MessageView

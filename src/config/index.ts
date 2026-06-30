@@ -36,6 +36,7 @@ export function loadConfig(customDir?: string): AppConfig | null {
     ...config,
     messageLayout: config.messageLayout ?? "classic",
     uiMode: config.uiMode ?? "full",
+    noColor: config.noColor ?? false,
   } as AppConfig;
 }
 
@@ -73,6 +74,10 @@ export function loadConfigWithEnvOverrides(
       config.authMethod,
     messageLayout:
       (process.env.TG_MESSAGE_LAYOUT as MessageLayout) ?? config.messageLayout,
+    noColor:
+      process.env.NO_COLOR != null && process.env.NO_COLOR !== ""
+        ? true
+        : config.noColor,
   };
 }
 

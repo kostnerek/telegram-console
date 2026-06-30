@@ -14,6 +14,7 @@ export interface AppConfig {
   authMethod: AuthMethod;
   messageLayout: MessageLayout;
   uiMode: UiMode;
+  noColor: boolean;
 }
 
 export type ConnectionState = "disconnected" | "connecting" | "connected";

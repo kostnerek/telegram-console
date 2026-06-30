@@ -11,6 +11,7 @@ import { HeaderBar } from "./components/HeaderBar";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { LogoutPrompt } from "./components/LogoutPrompt";
 import { MediaPanel } from "./components/MediaPanel";
+import { BlankScreen } from "./components/BlankScreen";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { hasConfig, loadConfig, loadConfigWithEnvOverrides, saveConfig, deleteSession, deleteAllData, loadSession, saveSession } from "./config";
 import { useTerminalSize } from "./hooks/useTerminalSize";
@@ -248,6 +249,12 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
         return;
       }
 
+      // Blank the screen (works from any panel except input)
+      if (input === "h" || input === "H") {
+        dispatch({ type: "SET_HIDDEN", payload: true });
+        return;
+      }
+
       // Header panel navigation
       if (state.focusedPanel === "header") {
         if (key.escape) {
@@ -316,7 +323,7 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
         }
       }
     },
-    { isActive: state.focusedPanel !== "input" }
+    { isActive: state.focusedPanel !== "input" && !state.isHidden }
   );
 
   // Escape to exit input mode (only active when input is focused)
@@ -326,7 +333,19 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
         dispatch({ type: "SET_FOCUSED_PANEL", payload: "messages" });
       }
     },
-    { isActive: state.focusedPanel === "input" }
+    { isActive: state.focusedPanel === "input" && !state.isHidden }
+  );
+
+  // While hidden: swallow input; any key restores (Ctrl+C still exits)
+  useInput(
+    (input, key) => {
+      if (key.ctrl && input === "c") {
+        exit();
+        return;
+      }
+      dispatch({ type: "SET_HIDDEN", payload: false });
+    },
+    { isActive: state.isHidden }
   );
 
   // Memoize derived data for child components
@@ -435,6 +454,10 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
     }
     return currentMessages.find((m) => m.id === state.mediaPanel.messageId) ?? null;
   }, [state.mediaPanel.isOpen, state.mediaPanel.messageId, currentMessages]);
+
+  if (state.isHidden) {
+    return <BlankScreen />;
+  }
 
   return (
     <Box flexDirection="column" height="100%">

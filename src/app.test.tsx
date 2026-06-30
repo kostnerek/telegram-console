@@ -21,6 +21,32 @@ describe("App Integration", () => {
   });
 });
 
+describe("MainApp hidden mode", () => {
+  let svc: ReturnType<typeof createMockTelegramService>;
+  beforeEach(() => { svc = createMockTelegramService(); });
+  afterEach(async () => { await svc.disconnect(); });
+
+  it("pressing h blanks the screen and any key restores", async () => {
+    const { lastFrame, stdin } = render(
+      <AppProvider telegramService={svc} initialUiMode="full">
+        <MainApp telegramService={svc} onLogout={() => {}} />
+      </AppProvider>
+    );
+    await new Promise((r) => setTimeout(r, 200));
+    expect(lastFrame() ?? "").toContain("Chats");
+
+    stdin.write("h");
+    await new Promise((r) => setTimeout(r, 50));
+    const hidden = lastFrame() ?? "";
+    expect(hidden).not.toContain("Chats");
+    expect(hidden).toContain("█");
+
+    stdin.write(" ");
+    await new Promise((r) => setTimeout(r, 50));
+    expect(lastFrame() ?? "").toContain("Chats");
+  });
+});
+
 describe("MainApp minimal UI mode", () => {
   let mockService: ReturnType<typeof createMockTelegramService>;
 

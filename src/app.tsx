@@ -2,7 +2,9 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Box, Text, useInput, useApp as useInkApp } from "ink";
 import { AppProvider, useApp } from "./state/context";
 import { ChatList } from "./components/ChatList";
+import { ChatStrip } from "./components/ChatStrip";
 import { MessageView } from "./components/MessageView";
+import { isNarrowLayout, getMessageViewWidth } from "./layout";
 import { InputBar } from "./components/InputBar";
 import { StatusBar } from "./components/StatusBar";
 import { Setup } from "./components/Setup";
@@ -191,12 +193,14 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
 
   // Calculate terminal dimensions and panel sizes
   const { columns: terminalWidth, rows: terminalRows } = useTerminalSize();
-  const chatListWidth = 35;
+  const narrow = isNarrowLayout(terminalWidth);
   const mediaPanelWidth = Math.floor(terminalWidth * 0.4);
-  // MessageView width: fills remaining space, shrinks when media panel is open
-  const messageViewWidth = state.mediaPanel.isOpen
-    ? terminalWidth - chatListWidth - mediaPanelWidth
-    : terminalWidth - chatListWidth;
+  const messageViewWidth = getMessageViewWidth(
+    terminalWidth,
+    narrow,
+    state.mediaPanel.isOpen,
+    mediaPanelWidth,
+  );
 
   // Dynamic height budget
   const isMinimal = state.uiMode === "minimal";
@@ -205,10 +209,11 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
   const headerReserved = isMinimal ? 0 : 3;
   const statusReserved = isMinimal ? 0 : 3;
   const connReserved = isMinimal && state.connectionState !== "connected" ? 1 : 0;
+  const stripReserved = narrow ? 1 : 0;
   const MIN_BODY_HEIGHT = 5;
   const bodyHeight = Math.max(
     MIN_BODY_HEIGHT,
-    terminalRows - headerReserved - statusReserved - inputReserved - connReserved,
+    terminalRows - headerReserved - statusReserved - inputReserved - connReserved - stripReserved,
   );
   const panelHeight = bodyHeight;
 
@@ -292,18 +297,18 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
 
       // Panel-specific navigation
       if (state.focusedPanel === "chatList") {
-        if (key.upArrow) {
+        if (key.upArrow || (narrow && key.leftArrow)) {
           const newIndex = Math.max(0, chatIndex - 1);
           const newChat = state.chats[newIndex];
           if (newChat) setHighlightedChatId(newChat.id);
-        } else if (key.downArrow) {
+        } else if (key.downArrow || (narrow && key.rightArrow)) {
           const newIndex = Math.min(state.chats.length - 1, chatIndex + 1);
           const newChat = state.chats[newIndex];
           if (newChat) setHighlightedChatId(newChat.id);
         } else if (key.return) {
           const chat = state.chats[chatIndex];
           if (chat) handleSelectChat(chat.id);
-        } else if (key.rightArrow) {
+        } else if (key.rightArrow && !narrow) {
           dispatch({ type: "SET_FOCUSED_PANEL", payload: "messages" });
         }
       } else if (state.focusedPanel === "messages") {
@@ -475,15 +480,26 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
         <SettingsPanel />
       ) : (
         <>
-          <Box flexGrow={1}>
-            <ChatList
+          {narrow && (
+            <ChatStrip
               chats={state.chats}
-              selectedChatId={state.selectedChatId}
-              onSelectChat={handleSelectChat}
               selectedIndex={chatIndex}
+              selectedChatId={state.selectedChatId}
               isFocused={isChatListFocused}
-              height={panelHeight}
+              width={terminalWidth}
             />
+          )}
+          <Box flexGrow={1}>
+            {!narrow && (
+              <ChatList
+                chats={state.chats}
+                selectedChatId={state.selectedChatId}
+                onSelectChat={handleSelectChat}
+                selectedIndex={chatIndex}
+                isFocused={isChatListFocused}
+                height={panelHeight}
+              />
+            )}
             <MessageView
               isFocused={isMessagesFocused && !state.mediaPanel.isOpen}
               selectedChatTitle={selectedChat?.title ?? null}

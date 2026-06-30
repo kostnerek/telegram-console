@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, memo } from "react";
-import { Box, Text, useInput } from "ink";
+import { useInput } from "ink";
+import { Box, Text } from "./ui";
 import type { Message } from "../types";
 import { transformEmoticons } from "../utils/emoticonMap";
 

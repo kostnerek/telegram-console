@@ -1,5 +1,5 @@
 import { memo, useMemo, useEffect } from "react";
-import { Box, Text } from "ink";
+import { Box, Text } from "./ui";
 import type { Chat } from "../types";
 import { useFlash } from "../hooks/useFlash.js";
 import { useTelegramService } from "../state/context.js";

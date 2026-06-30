@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Box, Text } from "ink";
+import { Box, Text } from "./ui";
 import type { ConnectionState, FocusedPanel } from "../types";
 
 interface StatusBarProps {

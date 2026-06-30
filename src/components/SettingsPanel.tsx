@@ -1,5 +1,6 @@
 import React, { memo, useState, useCallback } from "react";
-import { Box, Text, useInput } from "ink";
+import { useInput } from "ink";
+import { Box, Text } from "./ui";
 import { useApp } from "../state/context";
 import type { MessageLayout } from "../types";
 import { loadConfig, saveConfig } from "../config";

@@ -1,5 +1,6 @@
 import { memo, useMemo, useState, useCallback, useEffect, type Dispatch } from "react";
-import { Box, Text, useInput } from "ink";
+import { useInput } from "ink";
+import { Box, Text } from "./ui";
 import type { Message, MessageLayout } from "../types";
 import { formatMediaMetadata } from "../services/imageRenderer.js";
 import type { AppAction } from "../state/reducer.js";

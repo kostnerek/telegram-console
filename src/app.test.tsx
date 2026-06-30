@@ -28,7 +28,7 @@ describe("MainApp hidden mode", () => {
   it("pressing h blanks the screen and any key restores", async () => {
     const { lastFrame, stdin } = render(
       <AppProvider telegramService={svc} initialUiMode="full">
-        <MainApp telegramService={svc} onLogout={() => {}} />
+        <MainApp telegramService={svc} onLogout={() => {}} onToggleNoColor={() => {}} />
       </AppProvider>
     );
     await new Promise((r) => setTimeout(r, 200));
@@ -60,7 +60,7 @@ describe("MainApp minimal UI mode", () => {
   it("full mode renders header and status chrome", async () => {
     const { lastFrame } = render(
       <AppProvider telegramService={mockService} initialUiMode="full">
-        <MainApp telegramService={mockService} onLogout={() => {}} />
+        <MainApp telegramService={mockService} onLogout={() => {}} onToggleNoColor={() => {}} />
       </AppProvider>
     );
     // Wait for async connect + chats to load
@@ -73,7 +73,7 @@ describe("MainApp minimal UI mode", () => {
   it("pressing m switches to minimal mode and hides chrome", async () => {
     const { lastFrame, stdin } = render(
       <AppProvider telegramService={mockService} initialUiMode="full">
-        <MainApp telegramService={mockService} onLogout={() => {}} />
+        <MainApp telegramService={mockService} onLogout={() => {}} onToggleNoColor={() => {}} />
       </AppProvider>
     );
     // Wait for chats to load (connect resolves after ~100ms in mock)
@@ -84,5 +84,34 @@ describe("MainApp minimal UI mode", () => {
     const frame = lastFrame() ?? "";
     expect(frame).not.toContain("telegram-console");
     expect(frame).not.toContain("[Logout]");
+  });
+});
+
+describe("MainApp shortcuts legend + color toggle", () => {
+  let svc: ReturnType<typeof createMockTelegramService>;
+  beforeEach(() => { svc = createMockTelegramService(); });
+  afterEach(async () => { await svc.disconnect(); });
+
+  it("shows the shortcuts legend", async () => {
+    const { lastFrame } = render(
+      <AppProvider telegramService={svc} initialUiMode="full">
+        <MainApp telegramService={svc} onLogout={() => {}} onToggleNoColor={() => {}} />
+      </AppProvider>
+    );
+    await new Promise((r) => setTimeout(r, 200));
+    expect(lastFrame() ?? "").toContain("c colors");
+  });
+
+  it("pressing c calls onToggleNoColor", async () => {
+    let toggles = 0;
+    const { stdin } = render(
+      <AppProvider telegramService={svc} initialUiMode="full">
+        <MainApp telegramService={svc} onLogout={() => {}} onToggleNoColor={() => { toggles++; }} />
+      </AppProvider>
+    );
+    await new Promise((r) => setTimeout(r, 200));
+    stdin.write("c");
+    await new Promise((r) => setTimeout(r, 50));
+    expect(toggles).toBe(1);
   });
 });

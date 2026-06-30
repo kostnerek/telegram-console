@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Box, Text, useInput, useApp as useInkApp } from "ink";
+import { useInput, useApp as useInkApp } from "ink";
+import { Box, Text } from "./components/ui";
+import { ColorModeContext } from "./components/ui/ColorModeContext";
+import { ShortcutsBar } from "./components/ShortcutsBar";
 import { AppProvider, useApp } from "./state/context";
 import { ChatList } from "./components/ChatList";
 import { ChatStrip } from "./components/ChatStrip";
@@ -23,9 +26,10 @@ import type { AppConfig, TelegramService, LogoutMode } from "./types";
 interface MainAppProps {
   telegramService: TelegramService;
   onLogout: (mode: LogoutMode) => void;
+  onToggleNoColor: () => void;
 }
 
-export function MainApp({ telegramService, onLogout }: MainAppProps) {
+export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppProps) {
   const { state, dispatch } = useApp();
   const { exit } = useInkApp();
   // Track highlighted chat by ID (not index) so it follows when chats reorder
@@ -209,10 +213,11 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
   const statusReserved = isMinimal ? 0 : 3;
   const connReserved = isMinimal && state.connectionState !== "connected" ? 1 : 0;
   const stripReserved = narrow ? 1 : 0;
+  const legendReserved = 1;
   const MIN_BODY_HEIGHT = 5;
   const bodyHeight = Math.max(
     MIN_BODY_HEIGHT,
-    terminalRows - headerReserved - statusReserved - inputReserved - connReserved - stripReserved,
+    terminalRows - headerReserved - statusReserved - inputReserved - connReserved - stripReserved - legendReserved,
   );
   const panelHeight = bodyHeight;
 
@@ -256,6 +261,12 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
       // Blank the screen (works from any panel except input)
       if (input === "h" || input === "H") {
         dispatch({ type: "SET_HIDDEN", payload: true });
+        return;
+      }
+
+      // Toggle colors on/off (works from any panel except input)
+      if (input === "c" || input === "C") {
+        onToggleNoColor();
         return;
       }
 
@@ -546,6 +557,7 @@ export function MainApp({ telegramService, onLogout }: MainAppProps) {
             onCancelReply={handleCancelReply}
             onCancelEdit={handleCancelEdit}
           />
+          <ShortcutsBar />
         </>
       )}
       {!isMinimal && (
@@ -633,24 +645,40 @@ export function App({ useMock = false, incognito = false }: AppProps) {
     }
   }, [telegramService]);
 
+  const [noColor, setNoColor] = useState(
+    () => process.env.NO_COLOR != null && process.env.NO_COLOR !== "",
+  );
+  useEffect(() => {
+    if (config) setNoColor(config.noColor ?? false);
+  }, [config]);
+
+  const handleToggleNoColor = useCallback(() => {
+    setNoColor((prev) => {
+      const next = !prev;
+      const cfg = loadConfig();
+      if (cfg) saveConfig({ ...cfg, noColor: next });
+      return next;
+    });
+  }, []);
+
+  let tree: React.ReactNode;
   if (!isSetupComplete) {
-    return (
-      <Setup
-        onComplete={handleSetupComplete}
-        preferredAuthMethod="qr"
-      />
+    tree = <Setup onComplete={handleSetupComplete} preferredAuthMethod="qr" />;
+  } else if (!telegramService) {
+    tree = null;
+  } else {
+    tree = (
+      <ErrorBoundary>
+        <AppProvider telegramService={telegramService} initialUiMode={config?.uiMode}>
+          <MainApp
+            telegramService={telegramService}
+            onLogout={handleLogout}
+            onToggleNoColor={handleToggleNoColor}
+          />
+        </AppProvider>
+      </ErrorBoundary>
     );
   }
 
-  if (!telegramService) {
-    return null;
-  }
-
-  return (
-    <ErrorBoundary>
-      <AppProvider telegramService={telegramService} initialUiMode={config?.uiMode}>
-        <MainApp telegramService={telegramService} onLogout={handleLogout} />
-      </AppProvider>
-    </ErrorBoundary>
-  );
+  return <ColorModeContext.Provider value={noColor}>{tree}</ColorModeContext.Provider>;
 }

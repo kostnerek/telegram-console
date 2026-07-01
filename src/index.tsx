@@ -17,7 +17,6 @@ process.stderr.write = ((chunk: string | Uint8Array, ...args: unknown[]) => {
 
 import { render } from "ink";
 import { App } from "./app";
-import { clearTerminal } from "./utils/terminal";
 import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
@@ -51,12 +50,4 @@ Options:
 const useMock = process.argv.includes("--mock");
 const incognito = process.argv.includes("--incognito");
 
-const instance = render(<App useMock={useMock} incognito={incognito} />);
-instance
-  .waitUntilExit()
-  .then(() => {
-    if (process.stdout.isTTY) clearTerminal();
-  })
-  .catch(() => {
-    // Leave output intact on crash so errors stay visible.
-  });
+render(<App useMock={useMock} incognito={incognito} />);

@@ -459,7 +459,6 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
   const isChatListFocused = state.focusedPanel === "chatList";
   const isMessagesFocused = state.focusedPanel === "messages";
   const isInputFocused = state.focusedPanel === "input";
-  const isMediaPanelFocused = state.focusedPanel === "mediaPanel";
   const isLoadingOlder = state.selectedChatId ? state.loadingOlderMessages[state.selectedChatId] ?? false : false;
 
   // Find the message for the media panel
@@ -472,6 +471,21 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
 
   if (state.isHidden) {
     return <BlankScreen />;
+  }
+
+  // Media popup: full-screen takeover. Replaces the entire UI with the photo
+  // until closed (Esc/Enter), so the crisp image is as large as possible.
+  if (state.mediaPanel.isOpen && mediaPanelMessage) {
+    return (
+      <MediaPanel
+        message={mediaPanelMessage}
+        panelWidth={terminalWidth}
+        panelHeight={terminalRows}
+        downloadMedia={downloadMedia}
+        onClose={handleCloseMediaPanel}
+        isFocused
+      />
+    );
   }
 
   return (
@@ -528,16 +542,6 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
               sendReaction={sendReaction}
               removeReaction={removeReaction}
             />
-            {state.mediaPanel.isOpen && mediaPanelMessage && (
-              <MediaPanel
-                message={mediaPanelMessage}
-                panelWidth={mediaPanelWidth}
-                panelHeight={panelHeight}
-                downloadMedia={downloadMedia}
-                onClose={handleCloseMediaPanel}
-                isFocused={isMediaPanelFocused}
-              />
-            )}
           </Box>
           {isMinimal && state.connectionState !== "connected" && (
             <Box paddingX={1}>

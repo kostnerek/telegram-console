@@ -5,7 +5,7 @@ function ShortcutsBarInner() {
   return (
     <Box paddingX={1}>
       <Text dimColor wrap="truncate">
-        Tab cycle · m minimal · h hide · c colors · s settings · l logout
+        Tab cycle · ^V send image · m minimal · h hide · c colors · s settings · l logout
       </Text>
     </Box>
   );

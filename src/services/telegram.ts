@@ -258,6 +258,22 @@ export function createTelegramService(options: TelegramServiceOptions): Telegram
       };
     },
 
+    async sendImage(chatId: string, filePath: string) {
+      // GramJS auto-detects images and sends them as photos. The returned
+      // Api.Message carries the uploaded media, so we reuse extractMedia() to
+      // render it exactly like a received photo.
+      const result = await client.sendMessage(chatId, { file: filePath });
+      return {
+        id: result.id,
+        senderId: "me",
+        senderName: "You",
+        text: result.message ?? "",
+        timestamp: new Date(),
+        isOutgoing: true,
+        media: extractMedia(result),
+      };
+    },
+
     async editMessage(chatId: string, messageId: number, newText: string) {
       await client.invoke(
         new Api.messages.EditMessage({

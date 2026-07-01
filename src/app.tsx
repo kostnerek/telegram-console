@@ -21,7 +21,8 @@ import { hasConfig, loadConfig, loadConfigWithEnvOverrides, saveConfig, deleteSe
 import { useTerminalSize } from "./hooks/useTerminalSize";
 import { createTelegramService } from "./services/telegram";
 import { createMockTelegramService } from "./services/telegram.mock";
-import type { AppConfig, TelegramService, LogoutMode } from "./types";
+import { getClipboardImage } from "./services/clipboard";
+import type { AppConfig, TelegramService, LogoutMode, ImageSendResult } from "./types";
 
 interface MainAppProps {
   telegramService: TelegramService;
@@ -169,6 +170,23 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
       }
     },
     [telegramService, dispatch, state.replyingToMessage]
+  );
+
+  const handleSendImage = useCallback(
+    async (chatId: string): Promise<ImageSendResult> => {
+      const { path, error } = await getClipboardImage();
+      if (!path) {
+        return { ok: false, error: error ?? "No image in clipboard" };
+      }
+      try {
+        const message = await telegramService.sendImage(chatId, path);
+        dispatch({ type: "ADD_MESSAGE", payload: { chatId, message } });
+        return { ok: true };
+      } catch {
+        return { ok: false, error: "Failed to send image" };
+      }
+    },
+    [telegramService, dispatch]
   );
 
   const handleEditMessage = useCallback(
@@ -554,6 +572,7 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
             isFocused={isInputFocused}
             onSubmit={handleSendMessage}
             onEdit={handleEditMessage}
+            onSendImage={handleSendImage}
             onStartEdit={handleStartEdit}
             selectedChatId={state.selectedChatId}
             replyingToMessage={state.replyingToMessage}

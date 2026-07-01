@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useRef, memo } from "react";
+import React, { useState, useEffect, useRef, useCallback, memo } from "react";
 import { useInput } from "ink";
 import { Box, Text } from "./ui";
-import type { Message } from "../types";
+import type { Message, ImageSendResult } from "../types";
 import { transformEmoticons } from "../utils/emoticonMap";
 
 interface InputBarProps {
   isFocused: boolean;
   onSubmit: (text: string, chatId: string) => void;
   onEdit?: (text: string, chatId: string, messageId: number) => void;
+  onSendImage?: (chatId: string) => Promise<ImageSendResult>;
   onStartEdit?: () => void;
   selectedChatId: string | null;
   replyingToMessage?: Message | null;
@@ -26,6 +27,7 @@ function InputBarInner({
   isFocused,
   onSubmit,
   onEdit,
+  onSendImage,
   onStartEdit,
   selectedChatId,
   replyingToMessage,
@@ -36,6 +38,21 @@ function InputBarInner({
   // Single state object prevents race conditions between value and cursor updates
   const [state, setState] = useState<InputState>({ value: "", cursor: 0 });
   const prevChatIdRef = useRef(selectedChatId);
+
+  // Transient status line for clipboard-image sends (auto-clears after 3s).
+  const [status, setStatus] = useState<string | null>(null);
+  const statusTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showStatus = useCallback((msg: string) => {
+    setStatus(msg);
+    if (statusTimeout.current) clearTimeout(statusTimeout.current);
+    statusTimeout.current = setTimeout(() => setStatus(null), 3000);
+  }, []);
+  useEffect(
+    () => () => {
+      if (statusTimeout.current) clearTimeout(statusTimeout.current);
+    },
+    []
+  );
 
   // Clear input when chat changes
   useEffect(() => {
@@ -130,6 +147,17 @@ function InputBarInner({
         return;
       }
 
+      // Paste image from clipboard and send it (Ctrl+V)
+      if (key.ctrl && input === "v") {
+        if (selectedChatId && onSendImage) {
+          showStatus("Sending image…");
+          onSendImage(selectedChatId).then((result) => {
+            showStatus(result.ok ? "✓ Image sent" : result.error ?? "Failed to send image");
+          });
+        }
+        return;
+      }
+
       // Home (Ctrl+A)
       if (key.ctrl && input === "a") {
         setState((s) => ({ ...s, cursor: 0 }));
@@ -205,6 +233,7 @@ function InputBarInner({
             </Text>
           )}
         </Box>
+        {status && <Text dimColor> {status}</Text>}
       </Box>
     </Box>
   );
@@ -217,6 +246,7 @@ export const InputBar = memo(InputBarInner, (prev, next) => {
     prev.selectedChatId === next.selectedChatId &&
     prev.onSubmit === next.onSubmit &&
     prev.onEdit === next.onEdit &&
+    prev.onSendImage === next.onSendImage &&
     prev.onStartEdit === next.onStartEdit &&
     prev.replyingToMessage === next.replyingToMessage &&
     prev.editingMessage === next.editingMessage

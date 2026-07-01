@@ -37,6 +37,13 @@ export interface MediaAttachment {
   _message: Api.Message;    // GramJS reference for download
 }
 
+// Result of a clipboard-image send attempt, surfaced to the composer so it can
+// show a transient status ("✓ Image sent" / "No image in clipboard").
+export interface ImageSendResult {
+  ok: boolean;
+  error?: string;
+}
+
 export interface MessageReaction {
   emoji: string;
   count: number;
@@ -71,6 +78,7 @@ export interface TelegramService {
   getChats(): Promise<Chat[]>;
   getMessages(chatId: string, limit?: number, offsetId?: number): Promise<Message[]>;
   sendMessage(chatId: string, text: string, replyToMsgId?: number, replyToSenderName?: string): Promise<Message>;
+  sendImage(chatId: string, filePath: string): Promise<Message>;
   editMessage(chatId: string, messageId: number, newText: string): Promise<Message>;
   markAsRead(chatId: string, maxMessageId?: number): Promise<boolean>;
   sendReaction(chatId: string, messageId: number, emoji: string): Promise<boolean>;

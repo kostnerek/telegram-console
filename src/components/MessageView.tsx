@@ -1,6 +1,6 @@
 import { memo, useMemo, useState, useCallback, useEffect, type Dispatch } from "react";
 import { useInput } from "ink";
-import { Box, Text } from "./ui";
+import { Box, Text, useSkin } from "./ui";
 import type { Message, MessageLayout } from "../types";
 import { formatMediaMetadata } from "../services/imageRenderer.js";
 import type { AppAction } from "../state/reducer.js";
@@ -157,7 +157,10 @@ function MessageViewInner({
   sendReaction,
   removeReaction,
 }: MessageViewProps) {
-  const visibleLines = Math.max(1, height - 4);
+  const skin = useSkin();
+  // panelDividers skins drop the left/right/outer-top/bottom border, leaving
+  // only the header row + its divider (no outer border rows to subtract).
+  const visibleLines = Math.max(1, height - (skin.panelDividers ? 2 : 4));
   // Reaction picker state
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
   const [reactionPickerIndex, setReactionPickerIndex] = useState(0);
@@ -369,7 +372,8 @@ function MessageViewInner({
   };
 
   // Calculate line count for each message
-  const contentWidth = width - 4; // Account for borders and padding
+  // panelDividers skins have no left/right border columns, only paddingX.
+  const contentWidth = width - (skin.panelDividers ? 2 : 4);
   const messageLineCounts = useMemo(() => {
     return chatMessages.map((msg, index) => {
       const isSelected = index === selectedIndex && isFocused;
@@ -554,8 +558,7 @@ function MessageViewInner({
     return (
       <Box
         flexDirection="column"
-        borderStyle="round"
-        borderColor={isFocused ? "cyan" : "blue"}
+        {...(skin.panelDividers ? {} : { borderStyle: "round" as const, borderColor: isFocused ? "cyan" : "blue" })}
         width={width}
         height={height}
         justifyContent="center"
@@ -569,8 +572,7 @@ function MessageViewInner({
   return (
     <Box
       flexDirection="column"
-      borderStyle="round"
-      borderColor={isFocused ? "cyan" : "blue"}
+      {...(skin.panelDividers ? {} : { borderStyle: "round" as const, borderColor: isFocused ? "cyan" : "blue" })}
       width={width}
       height={height}
     >

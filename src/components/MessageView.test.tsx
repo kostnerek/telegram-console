@@ -3,6 +3,7 @@ import { render } from "ink-testing-library";
 import React from "react";
 import { MessageView, countWrappedLines } from "./MessageView";
 import { AppProvider } from "../state/context";
+import { SkinContext } from "./ui/SkinContext";
 import type { Message } from "../types";
 
 const mockMessages: Message[] = [
@@ -96,6 +97,35 @@ describe("MessageView", () => {
       />
     );
     expect(lastFrame()).toMatchSnapshot();
+  });
+
+  it("drops the round border under the claudeCode skin (default skin keeps it)", () => {
+    const props = {
+      isFocused: true,
+      selectedChatTitle: "Chat with Alice",
+      messages: mockMessages,
+      selectedIndex: 0,
+      width: 50,
+      dispatch: mockDispatch,
+      messageLayout: "classic" as const,
+      isGroupChat: false,
+      chatId: "chat1",
+      sendReaction: mockSendReaction,
+      removeReaction: mockRemoveReaction,
+    };
+    const defaultFrame = renderWithProvider(<MessageView {...props} />).lastFrame() ?? "";
+    const claudeCodeFrame =
+      render(
+        <SkinContext.Provider value="claudeCode">
+          <AppProvider>
+            <MessageView {...props} />
+          </AppProvider>
+        </SkinContext.Provider>,
+      ).lastFrame() ?? "";
+
+    expect(defaultFrame).toContain("╭");
+    expect(claudeCodeFrame).not.toContain("╭");
+    expect(claudeCodeFrame).toContain("Chat with Alice");
   });
 
   it("renders with unfocused state and messages", () => {

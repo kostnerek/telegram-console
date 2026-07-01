@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useInput, useApp as useInkApp } from "ink";
 import { Box, Text } from "./components/ui";
 import { ColorModeContext } from "./components/ui/ColorModeContext";
+import { SkinContext } from "./components/ui/SkinContext";
+import { getSkin } from "./config/skins";
 import { ShortcutsBar } from "./components/ShortcutsBar";
 import { AppProvider, useApp } from "./state/context";
 import { ChatList } from "./components/ChatList";
@@ -227,8 +229,11 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
   const isMinimal = state.uiMode === "minimal";
   const modeIndicatorVisible = !!(state.replyingToMessage || state.editingMessage);
   const inputReserved = 3 + (modeIndicatorVisible ? 1 : 0);
-  const headerReserved = isMinimal ? 0 : 3;
-  const statusReserved = isMinimal ? 0 : 3;
+  // panelDividers skins replace HeaderBar/StatusBar's round border (2 rows)
+  // with a single 1-row rule, so each panel is 1 row shorter.
+  const panelRows = getSkin(state.skin).panelDividers ? 2 : 3;
+  const headerReserved = isMinimal ? 0 : panelRows;
+  const statusReserved = isMinimal ? 0 : panelRows;
   const connReserved = isMinimal && state.connectionState !== "connected" ? 1 : 0;
   const stripReserved = narrow ? 1 : 0;
   const legendReserved = 1;
@@ -323,7 +328,12 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
         return;
       }
 
-      // Panel-specific navigation
+      // Panel-specific navigation (suppressed while Settings owns the keyboard,
+      // so its own arrow-key handling doesn't also move chat/message selection
+      // in the background)
+      if (state.currentView === "settings") {
+        return;
+      }
       if (state.focusedPanel === "chatList") {
         if (key.upArrow || (narrow && key.leftArrow)) {
           const newIndex = Math.max(0, chatIndex - 1);
@@ -495,101 +505,105 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
   // until closed (Esc/Enter), so the crisp image is as large as possible.
   if (state.mediaPanel.isOpen && mediaPanelMessage) {
     return (
-      <MediaPanel
-        message={mediaPanelMessage}
-        panelWidth={terminalWidth}
-        panelHeight={terminalRows}
-        downloadMedia={downloadMedia}
-        onClose={handleCloseMediaPanel}
-        isFocused
-      />
+      <SkinContext.Provider value={state.skin}>
+        <MediaPanel
+          message={mediaPanelMessage}
+          panelWidth={terminalWidth}
+          panelHeight={terminalRows}
+          downloadMedia={downloadMedia}
+          onClose={handleCloseMediaPanel}
+          isFocused
+        />
+      </SkinContext.Provider>
     );
   }
 
   return (
-    <Box flexDirection="column" height="100%">
-      {!isMinimal && (
-        <HeaderBar
-          isFocused={isHeaderFocused}
-          selectedButton={state.headerSelectedButton}
-        />
-      )}
-      {state.showLogoutPrompt ? (
-        <Box flexGrow={1} alignItems="center" justifyContent="center">
-          <LogoutPrompt onConfirm={handleLogoutConfirm} onCancel={handleLogoutCancel} />
-        </Box>
-      ) : state.currentView === "settings" ? (
-        <SettingsPanel />
-      ) : (
-        <>
-          {narrow && (
-            <ChatStrip
-              chats={state.chats}
-              selectedIndex={chatIndex}
-              selectedChatId={state.selectedChatId}
-              isFocused={isChatListFocused}
-              width={terminalWidth}
-            />
-          )}
-          <Box flexGrow={1}>
-            {!narrow && (
-              <ChatList
+    <SkinContext.Provider value={state.skin}>
+      <Box flexDirection="column" height="100%">
+        {!isMinimal && (
+          <HeaderBar
+            isFocused={isHeaderFocused}
+            selectedButton={state.headerSelectedButton}
+          />
+        )}
+        {state.showLogoutPrompt ? (
+          <Box flexGrow={1} alignItems="center" justifyContent="center">
+            <LogoutPrompt onConfirm={handleLogoutConfirm} onCancel={handleLogoutCancel} />
+          </Box>
+        ) : state.currentView === "settings" ? (
+          <SettingsPanel />
+        ) : (
+          <>
+            {narrow && (
+              <ChatStrip
                 chats={state.chats}
-                selectedChatId={state.selectedChatId}
-                onSelectChat={handleSelectChat}
                 selectedIndex={chatIndex}
+                selectedChatId={state.selectedChatId}
                 isFocused={isChatListFocused}
-                height={panelHeight}
-                width={getChatListWidth(terminalWidth)}
+                width={terminalWidth}
               />
             )}
-            <MessageView
-              isFocused={isMessagesFocused && !state.mediaPanel.isOpen}
-              selectedChatTitle={selectedChat?.title ?? null}
-              messages={currentMessages}
-              selectedIndex={messageIndex}
-              setSelectedIndex={setMessageIndex}
-              isLoadingOlder={isLoadingOlder}
-              canLoadOlder={canLoadOlder}
-              width={messageViewWidth}
-              height={panelHeight}
-              dispatch={dispatch}
-              messageLayout={state.messageLayout}
-              isGroupChat={selectedChat?.isGroup ?? false}
-              chatId={state.selectedChatId}
-              sendReaction={sendReaction}
-              removeReaction={removeReaction}
-            />
-          </Box>
-          {isMinimal && state.connectionState !== "connected" && (
-            <Box paddingX={1}>
-              <Text color={state.connectionState === "connecting" ? "yellow" : "red"}>
-                ● {state.connectionState === "connecting" ? "Connecting…" : "Disconnected"}
-              </Text>
+            <Box flexGrow={1}>
+              {!narrow && (
+                <ChatList
+                  chats={state.chats}
+                  selectedChatId={state.selectedChatId}
+                  onSelectChat={handleSelectChat}
+                  selectedIndex={chatIndex}
+                  isFocused={isChatListFocused}
+                  height={panelHeight}
+                  width={getChatListWidth(terminalWidth)}
+                />
+              )}
+              <MessageView
+                isFocused={isMessagesFocused && !state.mediaPanel.isOpen}
+                selectedChatTitle={selectedChat?.title ?? null}
+                messages={currentMessages}
+                selectedIndex={messageIndex}
+                setSelectedIndex={setMessageIndex}
+                isLoadingOlder={isLoadingOlder}
+                canLoadOlder={canLoadOlder}
+                width={messageViewWidth}
+                height={panelHeight}
+                dispatch={dispatch}
+                messageLayout={state.messageLayout}
+                isGroupChat={selectedChat?.isGroup ?? false}
+                chatId={state.selectedChatId}
+                sendReaction={sendReaction}
+                removeReaction={removeReaction}
+              />
             </Box>
-          )}
-          <InputBar
-            isFocused={isInputFocused}
-            onSubmit={handleSendMessage}
-            onEdit={handleEditMessage}
-            onSendImage={handleSendImage}
-            onStartEdit={handleStartEdit}
-            selectedChatId={state.selectedChatId}
-            replyingToMessage={state.replyingToMessage}
-            editingMessage={state.editingMessage}
-            onCancelReply={handleCancelReply}
-            onCancelEdit={handleCancelEdit}
+            {isMinimal && state.connectionState !== "connected" && (
+              <Box paddingX={1}>
+                <Text color={state.connectionState === "connecting" ? "yellow" : "red"}>
+                  ● {state.connectionState === "connecting" ? "Connecting…" : "Disconnected"}
+                </Text>
+              </Box>
+            )}
+            <InputBar
+              isFocused={isInputFocused}
+              onSubmit={handleSendMessage}
+              onEdit={handleEditMessage}
+              onSendImage={handleSendImage}
+              onStartEdit={handleStartEdit}
+              selectedChatId={state.selectedChatId}
+              replyingToMessage={state.replyingToMessage}
+              editingMessage={state.editingMessage}
+              onCancelReply={handleCancelReply}
+              onCancelEdit={handleCancelEdit}
+            />
+            <ShortcutsBar />
+          </>
+        )}
+        {!isMinimal && (
+          <StatusBar
+            connectionState={state.connectionState}
+            focusedPanel={state.focusedPanel}
           />
-          <ShortcutsBar />
-        </>
-      )}
-      {!isMinimal && (
-        <StatusBar
-          connectionState={state.connectionState}
-          focusedPanel={state.focusedPanel}
-        />
-      )}
-    </Box>
+        )}
+      </Box>
+    </SkinContext.Provider>
   );
 }
 
@@ -692,7 +706,7 @@ export function App({ useMock = false, incognito = false }: AppProps) {
   } else {
     tree = (
       <ErrorBoundary>
-        <AppProvider telegramService={telegramService} initialUiMode={config?.uiMode}>
+        <AppProvider telegramService={telegramService} initialUiMode={config?.uiMode} initialSkin={config?.skin}>
           <MainApp
             telegramService={telegramService}
             onLogout={handleLogout}

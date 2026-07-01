@@ -1,5 +1,5 @@
 import { memo, useMemo, useEffect } from "react";
-import { Box, Text } from "./ui";
+import { Box, Text, useSkin } from "./ui";
 import type { Chat } from "../types";
 import { useFlash } from "../hooks/useFlash.js";
 import { useTelegramService } from "../state/context.js";
@@ -58,7 +58,11 @@ interface ChatListProps {
 }
 
 function ChatListInner({ chats, selectedChatId, onSelectChat: _onSelectChat, selectedIndex, isFocused, height = 24, width = 35 }: ChatListProps) {
-  const listHeight = Math.max(1, height - (INDICATOR_LINES + HEADER_LINES + BORDER_LINES));
+  const skin = useSkin();
+  // A single right-edge divider (panelDividers skins) doesn't consume any rows,
+  // unlike a full round border's top+bottom border rows.
+  const borderLines = skin.panelDividers ? 0 : BORDER_LINES;
+  const listHeight = Math.max(1, height - (INDICATOR_LINES + HEADER_LINES + borderLines));
   const { visibleChats, visibleStartIndex, itemsAbove, itemsBelow } = useMemo(() => {
     const total = chats.length;
 
@@ -107,8 +111,16 @@ function ChatListInner({ chats, selectedChatId, onSelectChat: _onSelectChat, sel
   return (
     <Box
       flexDirection="column"
-      borderStyle="round"
-      borderColor={isFocused ? "cyan" : "blue"}
+      {...(skin.panelDividers
+        ? {
+            borderStyle: "single" as const,
+            borderTop: false,
+            borderBottom: false,
+            borderLeft: false,
+            borderRight: true,
+            borderColor: "gray",
+          }
+        : { borderStyle: "round" as const, borderColor: isFocused ? "cyan" : "blue" })}
       width={width}
       height={height}
     >

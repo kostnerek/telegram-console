@@ -2,6 +2,7 @@ import { describe, it, expect } from "bun:test";
 import { render } from "ink-testing-library";
 import React from "react";
 import { ChatList } from "./ChatList";
+import { SkinContext } from "./ui/SkinContext";
 import type { Chat } from "../types";
 
 const mockChats: Chat[] = [
@@ -106,5 +107,25 @@ describe("ChatList", () => {
       <ChatList chats={chats} selectedChatId={null} onSelectChat={() => {}} selectedIndex={0} isFocused={false} width={20} />
     ).lastFrame() ?? "";
     expect(narrowBox.split("\n")[0]!.length).toBe(20);
+  });
+
+  it("drops the round border for a right-edge divider under the claudeCode skin (default skin keeps it)", () => {
+    const chats = [{ id: "1", title: "Alpha", unreadCount: 0, isGroup: false }];
+    const defaultFrame =
+      render(
+        <ChatList chats={chats} selectedChatId={null} onSelectChat={() => {}} selectedIndex={0} isFocused={true} />
+      ).lastFrame() ?? "";
+    const claudeCodeFrame =
+      render(
+        <SkinContext.Provider value="claudeCode">
+          <ChatList chats={chats} selectedChatId={null} onSelectChat={() => {}} selectedIndex={0} isFocused={true} />
+        </SkinContext.Provider>,
+      ).lastFrame() ?? "";
+
+    expect(defaultFrame).toContain("╭");
+    expect(claudeCodeFrame).not.toContain("╭");
+    // Still width-35 (the default), just framed by a single right-edge "│" divider instead.
+    expect(claudeCodeFrame.split("\n")[0]!.length).toBe(35);
+    expect(claudeCodeFrame).toContain("│");
   });
 });

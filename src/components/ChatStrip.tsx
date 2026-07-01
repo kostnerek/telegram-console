@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Box, Text } from "./ui";
+import { Box, Text, useSkin } from "./ui";
 import type { Chat } from "../types";
 
 const WINDOW = 3;
@@ -14,6 +14,7 @@ interface ChatStripProps {
 }
 
 function ChatStripInner({ chats, selectedIndex, selectedChatId, isFocused }: ChatStripProps) {
+  const skin = useSkin();
   const total = chats.length;
   if (total === 0) {
     return (
@@ -38,7 +39,11 @@ function ChatStripInner({ chats, selectedIndex, selectedChatId, isFocused }: Cha
           const isHighlighted = isFocused && globalIndex === selectedIndex;
           const isActive = chat.id === selectedChatId;
           const hasUnread = chat.unreadCount > 0;
-          const prefix = isActive ? "▸" : chat.isGroup ? "#" : "";
+          // claudeCode's active-chat color/bold already signal selection, so the
+          // caret glyph in front of it would be a redundant marker there.
+          const prefix = isActive
+            ? skin.name === "claudeCode" ? "" : skin.glyphs.caret
+            : chat.isGroup ? "#" : "";
           const title = chat.title.slice(0, TITLE_MAX);
           const isLast = i === windowChats.length - 1;
           return (
@@ -46,7 +51,7 @@ function ChatStripInner({ chats, selectedIndex, selectedChatId, isFocused }: Cha
               <Text
                 inverse={isHighlighted}
                 bold={isActive || hasUnread}
-                color={isActive || hasUnread ? "cyan" : undefined}
+                color={isActive ? "cyan" : hasUnread ? "yellow" : undefined}
               >
                 {prefix}
                 {title}

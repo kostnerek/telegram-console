@@ -1,6 +1,10 @@
 import { useContext, type ComponentProps } from "react";
 import { Box as InkBox, Text as InkText } from "ink";
 import { ColorModeContext } from "./ColorModeContext";
+import { SkinContext } from "./SkinContext";
+import { getSkin, type Skin } from "../../config/skins";
+
+export { useSkin } from "./SkinContext";
 
 type TextProps = ComponentProps<typeof InkText>;
 type BoxProps = ComponentProps<typeof InkBox>;
@@ -58,12 +62,42 @@ export function grayscaleBoxProps(props: BoxProps, grayscale: boolean): BoxProps
   return { ...props, borderColor: toGray(props.borderColor) };
 }
 
+/**
+ * Remaps a color through the active skin's colorMap (e.g. cyan -> the skin's
+ * accent color). Passes through unchanged for the default skin or unmapped
+ * colors, so most components never need to know a skin is active.
+ */
+function applySkinColor(color: TextProps["color"], skin: Skin): TextProps["color"] {
+  if (typeof color !== "string") return color;
+  return skin.colorMap[color] ?? color;
+}
+
+export function skinTextProps(props: TextProps, skin: Skin): TextProps {
+  if (Object.keys(skin.colorMap).length === 0) return props;
+  return {
+    ...props,
+    color: applySkinColor(props.color, skin),
+    backgroundColor: applySkinColor(props.backgroundColor, skin),
+  };
+}
+
+export function skinBoxProps(props: BoxProps, skin: Skin): BoxProps {
+  if (Object.keys(skin.colorMap).length === 0) return props;
+  return { ...props, borderColor: applySkinColor(props.borderColor, skin) };
+}
+
 export function Text(props: TextProps) {
   const grayscale = useContext(ColorModeContext);
-  return <InkText {...grayscaleTextProps(props, grayscale)} />;
+  const skin = getSkin(useContext(SkinContext));
+  // noColor always wins: grayscale is computed from the original semantic
+  // color name, independent of which skin is active.
+  if (grayscale) return <InkText {...grayscaleTextProps(props, true)} />;
+  return <InkText {...skinTextProps(props, skin)} />;
 }
 
 export function Box(props: BoxProps) {
   const grayscale = useContext(ColorModeContext);
-  return <InkBox {...grayscaleBoxProps(props, grayscale)} />;
+  const skin = getSkin(useContext(SkinContext));
+  if (grayscale) return <InkBox {...grayscaleBoxProps(props, true)} />;
+  return <InkBox {...skinBoxProps(props, skin)} />;
 }

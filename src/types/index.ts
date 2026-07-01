@@ -5,6 +5,7 @@ export type SessionMode = "persistent" | "ephemeral";
 export type AuthMethod = "qr" | "phone";
 export type MessageLayout = "classic" | "bubble";
 export type UiMode = "full" | "minimal";
+export type SkinName = "default" | "claudeCode";
 
 export interface AppConfig {
   apiId: number | string;
@@ -15,6 +16,7 @@ export interface AppConfig {
   messageLayout: MessageLayout;
   uiMode: UiMode;
   noColor: boolean;
+  skin: SkinName;
 }
 
 export type ConnectionState = "disconnected" | "connecting" | "connected";

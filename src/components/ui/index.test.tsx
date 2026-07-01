@@ -1,8 +1,10 @@
 import { describe, it, expect } from "bun:test";
 import { render } from "ink-testing-library";
 import React from "react";
-import { Box, Text, toGray, grayscaleTextProps, grayscaleBoxProps } from "./index";
+import { Box, Text, toGray, grayscaleTextProps, grayscaleBoxProps, skinTextProps, skinBoxProps } from "./index";
 import { ColorModeContext } from "./ColorModeContext";
+import { SkinContext } from "./SkinContext";
+import { SKINS } from "../../config/skins";
 
 // The test environment is non-TTY, so Ink emits no ANSI in lastFrame() and the
 // color mapping cannot be observed from rendered output. We therefore test the
@@ -82,5 +84,58 @@ describe("wrappers (render smoke tests)", () => {
       ).lastFrame() ?? "";
     expect(frame).toContain("╭");
     expect(frame).toContain("x");
+  });
+
+  it("renders under the claudeCode skin", () => {
+    const frame =
+      render(
+        <SkinContext.Provider value="claudeCode">
+          <Box borderStyle="round" borderColor="cyan">
+            <Text color="cyan">hi</Text>
+          </Box>
+        </SkinContext.Provider>
+      ).lastFrame() ?? "";
+    expect(frame).toContain("╭");
+    expect(frame).toContain("hi");
+  });
+});
+
+describe("skinTextProps", () => {
+  it("returns props unchanged for the default skin (empty colorMap)", () => {
+    const props = { color: "cyan", children: "x" } as const;
+    expect(skinTextProps(props, SKINS.default)).toBe(props);
+  });
+
+  it("remaps mapped colors and leaves unmapped colors alone", () => {
+    const result = skinTextProps({ color: "cyan", backgroundColor: "green", children: "x" }, SKINS.claudeCode);
+    expect(result.color).toBe(SKINS.claudeCode.colorMap.cyan);
+    expect(result.backgroundColor).toBe("green");
+  });
+});
+
+describe("skinBoxProps", () => {
+  it("returns props unchanged for the default skin (empty colorMap)", () => {
+    const props = { borderStyle: "round", borderColor: "cyan" } as const;
+    expect(skinBoxProps(props, SKINS.default)).toBe(props);
+  });
+
+  it("remaps borderColor through the skin's colorMap", () => {
+    const result = skinBoxProps({ borderStyle: "round", borderColor: "blue" }, SKINS.claudeCode);
+    expect(result.borderColor).toBe(SKINS.claudeCode.colorMap.blue);
+    expect(result.borderStyle).toBe("round");
+  });
+});
+
+describe("noColor precedence over skin", () => {
+  it("grayscale wins even when a skin remaps the same color", () => {
+    const frame =
+      render(
+        <ColorModeContext.Provider value={true}>
+          <SkinContext.Provider value="claudeCode">
+            <Text color="cyan">hi</Text>
+          </SkinContext.Provider>
+        </ColorModeContext.Provider>
+      ).lastFrame() ?? "";
+    expect(frame).toContain("hi");
   });
 });

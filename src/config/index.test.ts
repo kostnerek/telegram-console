@@ -29,6 +29,7 @@ describe("Config", () => {
       messageLayout: "classic" as const,
       uiMode: "full" as const,
       noColor: false,
+      skin: "default" as const,
     };
 
     saveConfig(config, TEST_CONFIG_DIR);
@@ -73,6 +74,7 @@ describe("Environment Overrides", () => {
       messageLayout: "classic" as const,
       uiMode: "full" as const,
       noColor: false,
+      skin: "default" as const,
     };
     saveConfig(config, TEST_CONFIG_DIR);
 
@@ -127,6 +129,47 @@ describe("config noColor", () => {
     const dir = tmpConfigDir(false);
     process.env.NO_COLOR = "1";
     expect(loadConfigWithEnvOverrides(dir)!.noColor).toBe(true);
+    rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+describe("config skin", () => {
+  const prev = process.env.TG_SKIN;
+  afterEach(() => {
+    if (prev === undefined) delete process.env.TG_SKIN;
+    else process.env.TG_SKIN = prev;
+  });
+
+  function tmpConfigDir(skin?: string): string {
+    const dir = mkdtempSync(join(tmpdir(), "tgc-cfg-skin-"));
+    mkdirSync(dir, { recursive: true });
+    const cfg: Record<string, unknown> = {
+      apiId: 1, apiHash: "h", sessionPersistence: "persistent",
+      logLevel: "info", authMethod: "qr", messageLayout: "classic", uiMode: "full",
+      noColor: false,
+    };
+    if (skin !== undefined) cfg.skin = skin;
+    writeFileSync(join(dir, "config.json"), JSON.stringify(cfg));
+    return dir;
+  }
+
+  it("defaults skin to 'default' when absent", () => {
+    const dir = tmpConfigDir();
+    expect(loadConfig(dir)!.skin).toBe("default");
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("preserves a persisted skin", () => {
+    const dir = tmpConfigDir("claudeCode");
+    delete process.env.TG_SKIN;
+    expect(loadConfigWithEnvOverrides(dir)!.skin).toBe("claudeCode");
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("overrides skin via TG_SKIN env var", () => {
+    const dir = tmpConfigDir("default");
+    process.env.TG_SKIN = "claudeCode";
+    expect(loadConfigWithEnvOverrides(dir)!.skin).toBe("claudeCode");
     rmSync(dir, { recursive: true, force: true });
   });
 });

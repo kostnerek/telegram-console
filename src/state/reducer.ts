@@ -1,4 +1,4 @@
-import type { Chat, Message, ConnectionState, FocusedPanel, CurrentView, MessageLayout, UiMode } from "../types";
+import type { Chat, Message, ConnectionState, FocusedPanel, CurrentView, MessageLayout, UiMode, SkinName } from "../types";
 
 export interface InlinePreviewState {
   loading: boolean;
@@ -29,6 +29,7 @@ export interface AppState {
   inlinePreviews: Map<number, InlinePreviewState>;
   messageLayout: MessageLayout;
   uiMode: UiMode;
+  skin: SkinName;
   replyingToMessage: Message | null;
   editingMessage: Message | null;
   isHidden: boolean;
@@ -62,6 +63,7 @@ export type AppAction =
   | { type: "SET_INLINE_PREVIEW_ERROR"; payload: { messageId: number; error: string } }
   | { type: "SET_MESSAGE_LAYOUT"; payload: MessageLayout }
   | { type: "SET_UI_MODE"; payload: UiMode }
+  | { type: "SET_SKIN"; payload: SkinName }
   | { type: "SET_HIDDEN"; payload: boolean }
   // Reaction actions
   | { type: "ADD_REACTION"; payload: { chatId: string; messageId: number; emoji: string } }
@@ -92,6 +94,7 @@ export const initialState: AppState = {
   inlinePreviews: new Map(),
   messageLayout: "classic",
   uiMode: "full",
+  skin: "default",
   replyingToMessage: null,
   editingMessage: null,
   isHidden: false,
@@ -320,6 +323,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case "SET_UI_MODE":
       return { ...state, uiMode: action.payload };
+
+    case "SET_SKIN":
+      return { ...state, skin: action.payload };
 
     case "SET_HIDDEN":
       return { ...state, isHidden: action.payload };

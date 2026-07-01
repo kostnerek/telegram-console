@@ -95,6 +95,7 @@ export function Setup({ onComplete, preferredAuthMethod }: SetupProps) {
         messageLayout: "classic",
         uiMode: "full",
         noColor: false,
+        skin: "default",
       };
 
       // Small delay to show success message

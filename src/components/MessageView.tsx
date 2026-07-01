@@ -91,12 +91,21 @@ function hasUserReaction(reactions: Message["reactions"]): boolean {
 }
 
 function getMessageLineCount(msg: Message, _isSelected: boolean, availableWidth: number): number {
-  // Media metadata is now inline with sender, no extra lines needed
   const lines = msg.text.split("\n");
   if (availableWidth <= 0) return lines.length;
+  // The first rendered line carries the "[HH:MM] Sender: " prefix (+ optional reply
+  // prefix, media info) and any reactions suffix; continuation \n-lines are indented
+  // 8 spaces. Include them so the count matches Ink's actual wrapping and the visible
+  // window doesn't over-pack and clip the bottom message.
+  const senderName = msg.isOutgoing ? "You" : msg.senderName;
+  const replyPrefix = msg.replyToMsgId ? `↩${msg.replyToSenderName ?? "Unknown"}: ` : "";
+  const mediaInfo = msg.media ? ` ${formatMediaMetadata(msg.media, msg.id)}` : "";
+  const firstPrefix = `[${formatTime(msg.timestamp)}] ${replyPrefix}${senderName}:${mediaInfo} `;
+  const reactions = formatReactions(msg.reactions);
   let total = 0;
-  for (const line of lines) {
-    total += countWrappedLines(line, availableWidth);
+  for (let i = 0; i < lines.length; i++) {
+    const content = i === 0 ? firstPrefix + lines[i] + reactions : "        " + lines[i];
+    total += countWrappedLines(content, availableWidth);
   }
   return total;
 }

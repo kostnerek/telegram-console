@@ -30,30 +30,33 @@ function ChatStripInner({ chats, selectedIndex, selectedChatId, isFocused }: Cha
 
   return (
     <Box paddingX={1}>
-      <Text dimColor>{start > 0 ? "‹ " : "  "}</Text>
-      {windowChats.map((chat, i) => {
-        const globalIndex = start + i;
-        const isHighlighted = isFocused && globalIndex === selectedIndex;
-        const isActive = chat.id === selectedChatId;
-        const hasUnread = chat.unreadCount > 0;
-        const prefix = isActive ? "▸" : chat.isGroup ? "#" : "";
-        const title = chat.title.slice(0, TITLE_MAX);
-        const isLast = i === windowChats.length - 1;
-        return (
-          <Text key={chat.id}>
-            <Text
-              inverse={isHighlighted}
-              bold={isActive || hasUnread}
-              color={isActive || hasUnread ? "cyan" : undefined}
-            >
-              {prefix}
-              {title}
+      {/* Single truncated line: never wraps to a 2nd row (which would push it off-screen) */}
+      <Text wrap="truncate">
+        <Text dimColor>{start > 0 ? "‹ " : "  "}</Text>
+        {windowChats.map((chat, i) => {
+          const globalIndex = start + i;
+          const isHighlighted = isFocused && globalIndex === selectedIndex;
+          const isActive = chat.id === selectedChatId;
+          const hasUnread = chat.unreadCount > 0;
+          const prefix = isActive ? "▸" : chat.isGroup ? "#" : "";
+          const title = chat.title.slice(0, TITLE_MAX);
+          const isLast = i === windowChats.length - 1;
+          return (
+            <Text key={chat.id}>
+              <Text
+                inverse={isHighlighted}
+                bold={isActive || hasUnread}
+                color={isActive || hasUnread ? "cyan" : undefined}
+              >
+                {prefix}
+                {title}
+              </Text>
+              {!isLast && <Text dimColor> · </Text>}
             </Text>
-            {!isLast && <Text dimColor> · </Text>}
-          </Text>
-        );
-      })}
-      <Text dimColor>{end < total ? " ›" : ""}</Text>
+          );
+        })}
+        <Text dimColor>{end < total ? " ›" : ""}</Text>
+      </Text>
     </Box>
   );
 }

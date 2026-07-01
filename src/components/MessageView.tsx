@@ -650,7 +650,7 @@ function MessageViewInner({
               const viewHint =
                 isSelected && msg.media ? " [Press enter to view]" : "";
               return (
-                <Box key={msg.id} flexDirection="column" flexGrow={1}>
+                <Box key={msg.id} flexDirection="column" flexShrink={0}>
                   {lines.map((line, lineIndex) => (
                     <Box key={lineIndex}>
                       <Text wrap="wrap" backgroundColor={flashColor}>

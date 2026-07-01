@@ -203,7 +203,10 @@ export function createTelegramService(options: TelegramServiceOptions): Telegram
     async getChats() {
       const dialogs = await client.getDialogs({ limit: 100 });
       return dialogs
-        .filter((d) => !d.isChannel)
+        // Keep DMs and groups (regular + supergroups); drop only broadcast
+        // channels. In GramJS, isChannel is true for supergroups too, so
+        // filtering on !isChannel would wrongly hide every supergroup.
+        .filter((d) => d.isUser || d.isGroup)
         .map((d) => ({
           id: d.id?.toString() ?? "",
           title: d.title ?? "Unknown",

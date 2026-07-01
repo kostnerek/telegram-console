@@ -4,9 +4,8 @@ import React from "react";
 import { BlankScreen } from "./BlankScreen";
 
 describe("BlankScreen", () => {
-  it("renders BLANK ascii art using block characters", () => {
+  it("renders a blank screen with no visible content", () => {
     const frame = render(<BlankScreen />).lastFrame() ?? "";
-    expect(frame).toContain("█");
-    expect(frame.trim().length).toBeGreaterThan(0);
+    expect(frame.trim()).toBe("");
   });
 });

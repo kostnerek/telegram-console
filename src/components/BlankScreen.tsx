@@ -1,30 +1,9 @@
 import { memo } from "react";
-import { Box, Text } from "./ui";
+import { Box } from "./ui";
 
-const BLANK_ART = [
-  "██████  ██       █████  ███    ██ ██   ██",
-  "██   ██ ██      ██   ██ ████   ██ ██  ██ ",
-  "██████  ██      ███████ ██ ██  ██ █████  ",
-  "██   ██ ██      ██   ██ ██  ██ ██ ██  ██ ",
-  "██████  ███████ ██   ██ ██   ████ ██   ██",
-];
-
+// A completely blank full-screen box — hides all UI while "hidden mode" is active.
 function BlankScreenInner() {
-  return (
-    <Box
-      width="100%"
-      height="100%"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-    >
-      {BLANK_ART.map((line, i) => (
-        <Text key={i} dimColor>
-          {line}
-        </Text>
-      ))}
-    </Box>
-  );
+  return <Box width="100%" height="100%" />;
 }
 
 export const BlankScreen = memo(BlankScreenInner);

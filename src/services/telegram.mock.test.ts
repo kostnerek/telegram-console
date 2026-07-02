@@ -48,14 +48,34 @@ describe("MockTelegramService", () => {
     expect(states).toContain("connected");
   });
 
-  it("onTyping subscribe returns an unsubscribe that stops delivery", () => {
-    const service = createMockTelegramService();
-    let calls = 0;
-    const unsub = service.onTyping(() => { calls++; });
-    expect(typeof unsub).toBe("function");
-    unsub();
-    // After unsub, the internal callback set no longer contains our callback.
-    // We assert the contract shape here; emission timing is covered by manual --mock run.
-    expect(calls).toBe(0);
+  it("onTyping unsubscribe actually stops delivery of scripted pings", async () => {
+    // Drive the scripted typing loop with a tiny interval so this is deterministic
+    // and fast (defaults are 8000/3000ms for real --mock use).
+    const service = createMockTelegramService({ typingIntervalMs: 20, typingClearMs: 5 });
+    let aTrue = 0;
+    let bTrue = 0;
+    const unsubA = service.onTyping((_chatId, isTyping) => { if (isTyping) aTrue++; });
+    const unsubB = service.onTyping((_chatId, isTyping) => { if (isTyping) bTrue++; });
+    expect(typeof unsubA).toBe("function");
+
+    await service.connect();
+
+    // Let at least one interval tick fire: both callbacks should receive a `true` ping.
+    await new Promise((r) => setTimeout(r, 60));
+    expect(aTrue).toBeGreaterThan(0);
+    expect(bTrue).toBeGreaterThan(0);
+
+    // Unsubscribe A; B stays subscribed.
+    const aFrozenAt = aTrue;
+    const bBeforeUnsub = bTrue;
+    unsubA();
+
+    // Let more ticks fire: B keeps receiving, A must NOT (its count stays frozen).
+    await new Promise((r) => setTimeout(r, 60));
+    expect(bTrue).toBeGreaterThan(bBeforeUnsub);
+    expect(aTrue).toBe(aFrozenAt);
+
+    unsubB();
+    await service.disconnect();
   });
 });

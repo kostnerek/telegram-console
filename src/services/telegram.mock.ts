@@ -118,7 +118,12 @@ const DRIP_MESSAGES = [
   { chatId: "2", senderId: "2", senderName: "Donald", text: "TREMENDOUS progress on everything. Believe me." },
 ];
 
-export function createMockTelegramService(): TelegramService {
+export function createMockTelegramService(options?: {
+  typingIntervalMs?: number;
+  typingClearMs?: number;
+}): TelegramService {
+  const typingIntervalMs = options?.typingIntervalMs ?? 8000;
+  const typingClearMs = options?.typingClearMs ?? 3000;
   let connectionState: ConnectionState = "disconnected";
   let connectionCallback: ((state: ConnectionState) => void) | null = null;
   const messageCallbacks = new Set<(message: Message, chatId: string) => void>();
@@ -167,8 +172,8 @@ export function createMockTelegramService(): TelegramService {
         if (typingClearTimer) clearTimeout(typingClearTimer);
         typingClearTimer = setTimeout(() => {
           typingCallbacks.forEach((cb) => cb(chatId, false));
-        }, 3000);
-      }, 8000);
+        }, typingClearMs);
+      }, typingIntervalMs);
     },
 
     async disconnect() {

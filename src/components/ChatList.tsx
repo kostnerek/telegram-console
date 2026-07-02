@@ -31,7 +31,7 @@ const ChatRow = memo(function ChatRow({
   const suffix = hasUnread ? ` (${chat.unreadCount})` : "";
 
   return (
-    <Text>
+    <Text wrap="truncate">
       <Text color={hasUnread ? "cyan" : undefined} inverse={isSelected || isFlashing}>
         {unreadIndicator}
       </Text>

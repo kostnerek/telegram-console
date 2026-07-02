@@ -30,6 +30,7 @@ interface MessageViewProps {
     emoji: string,
   ) => Promise<boolean>;
   removeReaction: (chatId: string, messageId: number) => Promise<boolean>;
+  isTyping?: boolean;
 }
 
 function formatTime(date: Date): string {
@@ -156,6 +157,7 @@ function MessageViewInner({
   setSelectedIndex,
   sendReaction,
   removeReaction,
+  isTyping,
 }: MessageViewProps) {
   const skin = useSkin();
   // panelDividers skins drop the left/right/outer-top/bottom border, leaving
@@ -587,6 +589,7 @@ function MessageViewInner({
         <Text bold color={isFocused ? "cyan" : undefined}>
           {selectedChatTitle}
         </Text>
+        {isTyping && <Text dimColor italic> typing…</Text>}
         {totalLines > visibleLines && (
           <Text dimColor>
             {" "}

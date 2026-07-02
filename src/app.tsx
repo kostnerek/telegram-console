@@ -577,6 +577,7 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
                 chatId={state.selectedChatId}
                 sendReaction={sendReaction}
                 removeReaction={removeReaction}
+                isTyping={!!(state.selectedChatId && state.typingChats[state.selectedChatId])}
               />
             </Box>
             {isMinimal && state.connectionState !== "connected" && (

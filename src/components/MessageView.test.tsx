@@ -201,6 +201,48 @@ describe("MessageView", () => {
     expect(frame).toContain("earlier");
   });
 
+  it("shows 'typing…' in the header when isTyping is true", () => {
+    const { lastFrame } = renderWithProvider(
+      <MessageView
+        isFocused={false}
+        selectedChatTitle="Alice"
+        messages={[]}
+        selectedIndex={0}
+        width={40}
+        height={10}
+        dispatch={mockDispatch}
+        messageLayout="classic"
+        isGroupChat={false}
+        chatId="123"
+        isTyping={true}
+        sendReaction={mockSendReaction}
+        removeReaction={mockRemoveReaction}
+      />
+    );
+    expect(lastFrame()).toContain("typing…");
+  });
+
+  it("does not show 'typing…' when isTyping is false", () => {
+    const { lastFrame } = renderWithProvider(
+      <MessageView
+        isFocused={false}
+        selectedChatTitle="Alice"
+        messages={[]}
+        selectedIndex={0}
+        width={40}
+        height={10}
+        dispatch={mockDispatch}
+        messageLayout="classic"
+        isGroupChat={false}
+        chatId="123"
+        isTyping={false}
+        sendReaction={mockSendReaction}
+        removeReaction={mockRemoveReaction}
+      />
+    );
+    expect(lastFrame()).not.toContain("typing…");
+  });
+
   it("renders messages with reactions", () => {
     const messagesWithReactions: Message[] = [
       {

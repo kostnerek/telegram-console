@@ -110,9 +110,14 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
       dispatch({ type: "ADD_MESSAGE", payload: { chatId, message } });
     });
 
+    const unsubTyping = telegramService.onTyping((chatId, isTyping) => {
+      dispatch({ type: "SET_TYPING", payload: { chatId, isTyping } });
+    });
+
     return () => {
       unsubConnection();
       unsubMessages();
+      unsubTyping();
     };
   }, [telegramService, dispatch]);
 

@@ -125,6 +125,9 @@ export function createMockTelegramService(): TelegramService {
   const messages = structuredClone(MOCK_MESSAGES);
   let dripIndex = 0;
   let dripInterval: NodeJS.Timeout | null = null;
+  const typingCallbacks = new Set<(chatId: string, isTyping: boolean) => void>();
+  let typingInterval: NodeJS.Timeout | null = null;
+  let typingClearTimer: NodeJS.Timeout | null = null;
 
   return {
     async connect() {
@@ -154,12 +157,32 @@ export function createMockTelegramService(): TelegramService {
           dripIndex++;
         }
       }, 5000);
+
+      // Scripted typing: emit a typing ping for the first chat, clear after 3s.
+      typingInterval = setInterval(() => {
+        if (typingCallbacks.size === 0) return;
+        const chatId = MOCK_CHATS[0]?.id;
+        if (!chatId) return;
+        typingCallbacks.forEach((cb) => cb(chatId, true));
+        if (typingClearTimer) clearTimeout(typingClearTimer);
+        typingClearTimer = setTimeout(() => {
+          typingCallbacks.forEach((cb) => cb(chatId, false));
+        }, 3000);
+      }, 8000);
     },
 
     async disconnect() {
       if (dripInterval) {
         clearInterval(dripInterval);
         dripInterval = null;
+      }
+      if (typingInterval) {
+        clearInterval(typingInterval);
+        typingInterval = null;
+      }
+      if (typingClearTimer) {
+        clearTimeout(typingClearTimer);
+        typingClearTimer = null;
       }
       connectionState = "disconnected";
       connectionCallback?.(connectionState);
@@ -261,6 +284,13 @@ export function createMockTelegramService(): TelegramService {
       messageCallbacks.add(callback);
       return () => {
         messageCallbacks.delete(callback);
+      };
+    },
+
+    onTyping(callback) {
+      typingCallbacks.add(callback);
+      return () => {
+        typingCallbacks.delete(callback);
       };
     },
 

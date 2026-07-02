@@ -55,4 +55,23 @@ describe("ChatStrip", () => {
       ).lastFrame() ?? "";
     expect(frame).toContain("No chats");
   });
+
+  it("shows a … marker for a chat that is typing", () => {
+    const chats = [
+      { id: "1", title: "Alice", unreadCount: 0, isGroup: false },
+      { id: "2", title: "Bob", unreadCount: 0, isGroup: false },
+    ];
+    const frame =
+      render(
+        <ChatStrip
+          chats={chats}
+          selectedIndex={0}
+          selectedChatId={"1"}
+          isFocused={false}
+          width={80}
+          typingChats={{ "2": true }}
+        />
+      ).lastFrame() ?? "";
+    expect(frame).toContain("…Bob");
+  });
 });

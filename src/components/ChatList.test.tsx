@@ -128,4 +128,26 @@ describe("ChatList", () => {
     expect(claudeCodeFrame.split("\n")[0]!.length).toBe(35);
     expect(claudeCodeFrame).toContain("│");
   });
+
+  it("shows a … marker for a chat that is typing", () => {
+    const chats = [
+      { id: "1", title: "Alice", unreadCount: 0, isGroup: false },
+      { id: "2", title: "Bob", unreadCount: 0, isGroup: false },
+    ];
+    const { lastFrame } = render(
+      <ChatList
+        chats={chats}
+        selectedChatId={"1"}
+        onSelectChat={() => {}}
+        selectedIndex={0}
+        isFocused={false}
+        height={24}
+        width={35}
+        typingChats={{ "2": true }}
+      />
+    );
+    const frame = lastFrame() ?? "";
+    expect(frame).toContain("Bob …");
+    expect(frame).not.toContain("Alice …");
+  });
 });

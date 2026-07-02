@@ -11,9 +11,10 @@ interface ChatStripProps {
   selectedChatId: string | null;
   isFocused: boolean;
   width: number;
+  typingChats?: Record<string, boolean>;
 }
 
-function ChatStripInner({ chats, selectedIndex, selectedChatId, isFocused }: ChatStripProps) {
+function ChatStripInner({ chats, selectedIndex, selectedChatId, isFocused, typingChats }: ChatStripProps) {
   const skin = useSkin();
   const total = chats.length;
   if (total === 0) {
@@ -46,8 +47,10 @@ function ChatStripInner({ chats, selectedIndex, selectedChatId, isFocused }: Cha
             : chat.isGroup ? "#" : "";
           const title = chat.title.slice(0, TITLE_MAX);
           const isLast = i === windowChats.length - 1;
+          const isTyping = !!typingChats?.[chat.id];
           return (
             <Text key={chat.id}>
+              {isTyping && <Text dimColor>…</Text>}
               <Text
                 inverse={isHighlighted}
                 bold={isActive || hasUnread}

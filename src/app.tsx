@@ -547,6 +547,7 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
                 selectedChatId={state.selectedChatId}
                 isFocused={isChatListFocused}
                 width={terminalWidth}
+                typingChats={state.typingChats}
               />
             )}
             <Box flexGrow={1}>
@@ -559,6 +560,7 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
                   isFocused={isChatListFocused}
                   height={panelHeight}
                   width={getChatListWidth(terminalWidth)}
+                  typingChats={state.typingChats}
                 />
               )}
               <MessageView

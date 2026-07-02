@@ -309,3 +309,35 @@ describe("appReducer SET_HIDDEN", () => {
     expect(shown.isHidden).toBe(false);
   });
 });
+
+describe("SET_TYPING", () => {
+  it("adds a chat key when isTyping is true", () => {
+    const state = appReducer(initialState, {
+      type: "SET_TYPING",
+      payload: { chatId: "123", isTyping: true },
+    });
+    expect(state.typingChats["123"]).toBe(true);
+  });
+
+  it("deletes the chat key when isTyping is false", () => {
+    const typing = appReducer(initialState, {
+      type: "SET_TYPING",
+      payload: { chatId: "123", isTyping: true },
+    });
+    const cleared = appReducer(typing, {
+      type: "SET_TYPING",
+      payload: { chatId: "123", isTyping: false },
+    });
+    expect(cleared.typingChats["123"]).toBeUndefined();
+    expect(Object.keys(cleared.typingChats)).toHaveLength(0);
+  });
+
+  it("RESET_STATE clears typingChats", () => {
+    const typing = appReducer(initialState, {
+      type: "SET_TYPING",
+      payload: { chatId: "123", isTyping: true },
+    });
+    const reset = appReducer(typing, { type: "RESET_STATE" });
+    expect(reset.typingChats).toEqual({});
+  });
+});

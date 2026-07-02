@@ -87,5 +87,6 @@ export interface TelegramService {
   removeReaction(chatId: string, messageId: number): Promise<boolean>;
   onConnectionStateChange(callback: (state: ConnectionState) => void): () => void;
   onNewMessage(callback: (message: Message, chatId: string) => void): () => void;
+  onTyping(callback: (chatId: string, isTyping: boolean) => void): () => void;
   downloadMedia(message: Message): Promise<Buffer | undefined>;
 }

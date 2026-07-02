@@ -33,6 +33,7 @@ export interface AppState {
   replyingToMessage: Message | null;
   editingMessage: Message | null;
   isHidden: boolean;
+  typingChats: Record<string, boolean>;
 }
 
 export type AppAction =
@@ -71,7 +72,8 @@ export type AppAction =
   // Reply/Edit actions
   | { type: "SET_REPLYING_TO"; payload: Message | null }
   | { type: "SET_EDITING_MESSAGE"; payload: Message | null }
-  | { type: "UPDATE_MESSAGE"; payload: { chatId: string; messageId: number; newText: string } };
+  | { type: "UPDATE_MESSAGE"; payload: { chatId: string; messageId: number; newText: string } }
+  | { type: "SET_TYPING"; payload: { chatId: string; isTyping: boolean } };
 
 export const initialState: AppState = {
   connectionState: "disconnected",
@@ -98,6 +100,7 @@ export const initialState: AppState = {
   replyingToMessage: null,
   editingMessage: null,
   isHidden: false,
+  typingChats: {},
 };
 
 export function appReducer(state: AppState, action: AppAction): AppState {
@@ -408,6 +411,17 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         messages: { ...state.messages, [chatId]: updatedMessages },
       };
+    }
+
+    case "SET_TYPING": {
+      const { chatId, isTyping } = action.payload;
+      if (isTyping) {
+        return { ...state, typingChats: { ...state.typingChats, [chatId]: true } };
+      }
+      if (!state.typingChats[chatId]) return state;
+      const next = { ...state.typingChats };
+      delete next[chatId];
+      return { ...state, typingChats: next };
     }
 
     default:

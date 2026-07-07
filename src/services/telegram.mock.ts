@@ -1,4 +1,4 @@
-import type { TelegramService, ConnectionState, Chat, Message } from "../types";
+import type { TelegramService, ConnectionState, Chat, Message, MediaAttachment } from "../types";
 
 const MOCK_CHATS: Chat[] = [
   { id: "1", title: "Elon Musk", unreadCount: 47, isGroup: false },
@@ -201,6 +201,27 @@ export function createMockTelegramService(): TelegramService {
         replyToSenderName: replyToSenderName ?? (replyToMsgId
           ? messages[chatId]?.find((m) => m.id === replyToMsgId)?.senderName
           : undefined),
+      };
+      if (!messages[chatId]) {
+        messages[chatId] = [];
+      }
+      messages[chatId]!.push(message);
+      return message;
+    },
+
+    async sendImage(chatId: string, filePath: string) {
+      const fileName = filePath.split("/").pop() ?? "image.png";
+      // No real Api.Message in mock mode; downloadMedia returns undefined, so
+      // the message list just shows a photo indicator with the file name.
+      const media = { type: "photo", fileName } as MediaAttachment;
+      const message: Message = {
+        id: Date.now(),
+        senderId: "me",
+        senderName: "You",
+        text: "",
+        timestamp: new Date(),
+        isOutgoing: true,
+        media,
       };
       if (!messages[chatId]) {
         messages[chatId] = [];

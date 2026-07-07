@@ -203,7 +203,10 @@ export function createTelegramService(options: TelegramServiceOptions): Telegram
     async getChats() {
       const dialogs = await client.getDialogs({ limit: 100 });
       return dialogs
-        .filter((d) => !d.isChannel)
+        // Keep DMs and groups (regular + supergroups); drop only broadcast
+        // channels. In GramJS, isChannel is true for supergroups too, so
+        // filtering on !isChannel would wrongly hide every supergroup.
+        .filter((d) => d.isUser || d.isGroup)
         .map((d) => ({
           id: d.id?.toString() ?? "",
           title: d.title ?? "Unknown",
@@ -252,6 +255,22 @@ export function createTelegramService(options: TelegramServiceOptions): Telegram
         isOutgoing: true,
         replyToMsgId,
         replyToSenderName,
+      };
+    },
+
+    async sendImage(chatId: string, filePath: string) {
+      // GramJS auto-detects images and sends them as photos. The returned
+      // Api.Message carries the uploaded media, so we reuse extractMedia() to
+      // render it exactly like a received photo.
+      const result = await client.sendMessage(chatId, { file: filePath });
+      return {
+        id: result.id,
+        senderId: "me",
+        senderName: "You",
+        text: result.message ?? "",
+        timestamp: new Date(),
+        isOutgoing: true,
+        media: extractMedia(result),
       };
     },
 

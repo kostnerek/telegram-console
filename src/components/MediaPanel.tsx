@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Text, useInput } from 'ink';
+import { useInput } from 'ink';
+import { Box, Text } from './ui';
 import type { Message } from '../types/index.js';
 import { getMediaBuffer } from '../services/mediaCache.js';
 import { renderPanelImage, formatMediaMetadata } from '../services/imageRenderer.js';
+import { supportsKittyGraphics, buildKittyImage, clearKittyImage } from '../services/kittyImage.js';
 
 // Panel chrome: border(2) + header(1) + marginBottom(1) + marginTop(1) + metadata(1) + hint(1) = 7 rows
 // Plus 1 for bottom border inner = 8 total non-image rows
@@ -39,6 +41,7 @@ export function MediaPanel({ message, panelWidth, panelHeight, downloadMedia, on
 
   useEffect(() => {
     let cancelled = false;
+    let transmittedKitty = false;
 
     (async () => {
       try {
@@ -48,6 +51,21 @@ export function MediaPanel({ message, panelWidth, panelHeight, downloadMedia, on
             setError('Failed to download');
             setLoading(false);
           }
+          return;
+        }
+
+        // Crisp path: Kitty graphics via Unicode placeholders (Ghostty, iTerm 3.6+).
+        // The image is transmitted to the terminal once, then rendered as a grid of
+        // placeholder characters that Ink draws as text — the terminal paints the
+        // real image over them. Falls back to ANSI half-blocks elsewhere.
+        if (supportsKittyGraphics()) {
+          const contentWidth = panelWidth - 4; // border(2) + paddingX(2)
+          const { control, grid } = await buildKittyImage(buffer, contentWidth, imageMaxHeight);
+          if (cancelled) return;
+          process.stdout.write(control);
+          transmittedKitty = true;
+          setImage(grid);
+          setLoading(false);
           return;
         }
 
@@ -66,6 +84,7 @@ export function MediaPanel({ message, panelWidth, panelHeight, downloadMedia, on
 
     return () => {
       cancelled = true;
+      if (transmittedKitty) process.stdout.write(clearKittyImage());
     };
   }, [messageId, message, downloadMedia, panelWidth, imageMaxHeight]);
 
@@ -86,7 +105,7 @@ export function MediaPanel({ message, panelWidth, panelHeight, downloadMedia, on
         <Text bold color={focusColor}>Media</Text>
       </Box>
 
-      <Box flexDirection="column">
+      <Box flexDirection="column" flexGrow={1} alignItems="center" justifyContent="center">
         {loading && <Text dimColor>Loading...</Text>}
         {error && <Text color="red">⚠ {error}</Text>}
         {image && <Text>{image}</Text>}

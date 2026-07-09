@@ -1,5 +1,6 @@
 import terminalImage from 'terminal-image';
 import type { MediaAttachment } from '../types/index.js';
+import { stripAnsi } from './ansiViewport.js';
 
 /**
  * Wrapper that forces ANSI half-block rendering instead of native inline-image
@@ -57,13 +58,6 @@ export function calculatePreviewDimensions(imageWidth: number, imageHeight: numb
   };
 }
 
-// Strip ANSI escape codes to measure actual display width
-function stripAnsi(str: string): string {
-  // Match all ANSI escape sequences including OSC, CSI, etc.
-  // eslint-disable-next-line no-control-regex
-  return str.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~]|\][^\x07]*\x07)/g, '');
-}
-
 export interface PreviewResult {
   image: string;
   width: number;
@@ -91,14 +85,18 @@ export async function renderInlinePreview(buffer: Buffer, width: number, height:
 export async function renderPanelImage(
   buffer: Buffer,
   panelWidth: number,
-  maxHeight?: number
+  maxHeight?: number,
+  zoom = 1
 ): Promise<string> {
-  // Account for border (2 chars) + paddingX (2 chars) = 4 chars overhead
-  const contentWidth = panelWidth - 4;
+  // Account for border (2 chars) + paddingX (2 chars) = 4 chars overhead.
+  // Magnify by `zoom` — the caller slices a viewport-sized window out of the
+  // oversized render (see sliceAnsiViewport) so zoom > 1 can be panned.
+  const contentWidth = Math.round((panelWidth - 4) * zoom);
+  const height = maxHeight != null ? Math.round(maxHeight * zoom) : undefined;
 
   const result = await renderWithAnsiBlocks(buffer, {
     width: contentWidth,
-    height: maxHeight,
+    height,
     preserveAspectRatio: true,
   });
 

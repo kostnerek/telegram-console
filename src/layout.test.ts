@@ -19,15 +19,10 @@ describe("layout helpers", () => {
   });
 
   it("getMessageViewWidth gives full width when narrow", () => {
-    expect(getMessageViewWidth(50, true, false, 0)).toBe(50);
+    expect(getMessageViewWidth(50, true)).toBe(50);
   });
 
   it("getMessageViewWidth subtracts sidebar when wide", () => {
-    expect(getMessageViewWidth(100, false, false, 0)).toBe(65);
-  });
-
-  it("getMessageViewWidth subtracts media panel when open", () => {
-    expect(getMessageViewWidth(100, false, true, 40)).toBe(25);
-    expect(getMessageViewWidth(50, true, true, 20)).toBe(30);
+    expect(getMessageViewWidth(100, false)).toBe(65);
   });
 });

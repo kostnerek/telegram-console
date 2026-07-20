@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { unlink } from "node:fs/promises";
 import { useInput, useApp as useInkApp } from "ink";
 import { Box, Text } from "./components/ui";
 import { ColorModeContext } from "./components/ui/ColorModeContext";
@@ -181,7 +182,7 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
 
   const handleSendImage = useCallback(
     async (chatId: string): Promise<ImageSendResult> => {
-      const { path, error } = await getClipboardImage();
+      const { path, error, isTemp } = await getClipboardImage();
       if (!path) {
         return { ok: false, error: error ?? "No image in clipboard" };
       }
@@ -191,6 +192,10 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
         return { ok: true };
       } catch {
         return { ok: false, error: "Failed to send image" };
+      } finally {
+        if (isTemp) {
+          unlink(path).catch(() => {});
+        }
       }
     },
     [telegramService, dispatch]
@@ -222,13 +227,7 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
   // Calculate terminal dimensions and panel sizes
   const { columns: terminalWidth, rows: terminalRows } = useTerminalSize();
   const narrow = isNarrowLayout(terminalWidth);
-  const mediaPanelWidth = Math.floor(terminalWidth * 0.4);
-  const messageViewWidth = getMessageViewWidth(
-    terminalWidth,
-    narrow,
-    state.mediaPanel.isOpen,
-    mediaPanelWidth,
-  );
+  const messageViewWidth = getMessageViewWidth(terminalWidth, narrow);
 
   // Dynamic height budget
   const isMinimal = state.uiMode === "minimal";
@@ -255,6 +254,11 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
       // Ctrl+C always exits
       if (key.ctrl && input === "c") {
         exit();
+        return;
+      }
+
+      // Media popup owns the keyboard (MediaPanel handles its own keys)
+      if (state.mediaPanel.isOpen) {
         return;
       }
 
@@ -546,7 +550,6 @@ export function MainApp({ telegramService, onLogout, onToggleNoColor }: MainAppP
                 selectedIndex={chatIndex}
                 selectedChatId={state.selectedChatId}
                 isFocused={isChatListFocused}
-                width={terminalWidth}
                 typingChats={state.typingChats}
               />
             )}

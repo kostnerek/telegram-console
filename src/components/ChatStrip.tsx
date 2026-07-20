@@ -10,7 +10,6 @@ interface ChatStripProps {
   selectedIndex: number;
   selectedChatId: string | null;
   isFocused: boolean;
-  width: number;
   typingChats?: Record<string, boolean>;
 }
 

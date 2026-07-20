@@ -9,12 +9,6 @@ export function getChatListWidth(terminalWidth: number): number {
   return Math.min(35, terminalWidth - MIN_MESSAGE_WIDTH);
 }
 
-export function getMessageViewWidth(
-  terminalWidth: number,
-  narrow: boolean,
-  mediaPanelOpen: boolean,
-  mediaPanelWidth: number,
-): number {
-  const base = narrow ? terminalWidth : terminalWidth - getChatListWidth(terminalWidth);
-  return mediaPanelOpen ? base - mediaPanelWidth : base;
+export function getMessageViewWidth(terminalWidth: number, narrow: boolean): number {
+  return narrow ? terminalWidth : terminalWidth - getChatListWidth(terminalWidth);
 }

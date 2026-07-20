@@ -17,7 +17,7 @@ describe("ChatStrip", () => {
   it("shows a 3-chat window centered on the selection", () => {
     const frame =
       render(
-        <ChatStrip chats={makeChats(6)} selectedIndex={3} selectedChatId="3" isFocused width={50} />
+        <ChatStrip chats={makeChats(6)} selectedIndex={3} selectedChatId="3" isFocused />
       ).lastFrame() ?? "";
     expect(frame).toContain("Chat2");
     expect(frame).toContain("Chat3");
@@ -29,7 +29,7 @@ describe("ChatStrip", () => {
   it("marks the active chat with ▸ and shows overflow affordances", () => {
     const frame =
       render(
-        <ChatStrip chats={makeChats(6)} selectedIndex={3} selectedChatId="3" isFocused width={50} />
+        <ChatStrip chats={makeChats(6)} selectedIndex={3} selectedChatId="3" isFocused />
       ).lastFrame() ?? "";
     expect(frame).toContain("▸Chat3");
     expect(frame).toContain("‹");
@@ -40,7 +40,7 @@ describe("ChatStrip", () => {
     const frame =
       render(
         <SkinContext.Provider value="claudeCode">
-          <ChatStrip chats={makeChats(6)} selectedIndex={3} selectedChatId="3" isFocused width={50} />
+          <ChatStrip chats={makeChats(6)} selectedIndex={3} selectedChatId="3" isFocused />
         </SkinContext.Provider>
       ).lastFrame() ?? "";
     expect(frame).toContain("Chat3");
@@ -51,7 +51,7 @@ describe("ChatStrip", () => {
   it("renders a placeholder when there are no chats", () => {
     const frame =
       render(
-        <ChatStrip chats={[]} selectedIndex={0} selectedChatId={null} isFocused width={50} />
+        <ChatStrip chats={[]} selectedIndex={0} selectedChatId={null} isFocused />
       ).lastFrame() ?? "";
     expect(frame).toContain("No chats");
   });
@@ -68,7 +68,6 @@ describe("ChatStrip", () => {
           selectedIndex={0}
           selectedChatId={"1"}
           isFocused={false}
-          width={80}
           typingChats={{ "2": true }}
         />
       ).lastFrame() ?? "";

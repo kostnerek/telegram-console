@@ -26,6 +26,8 @@ const IMAGE_EXTENSIONS = new Set([
 export interface ClipboardImageResult {
   path?: string;
   error?: string;
+  /** True when the file was written by us and can be deleted after use. */
+  isTemp?: boolean;
 }
 
 async function tryRun(
@@ -84,7 +86,7 @@ on run
 			set fileRef to (open for access (POSIX file tmpPath) with write permission)
 			write pngData to fileRef
 			close access fileRef
-			set imagePath to tmpPath
+			set imagePath to "tmp:" & tmpPath
 		end try
 	end try
 	return imagePath
@@ -95,7 +97,9 @@ async function macClipboardImage(): Promise<ClipboardImageResult> {
   const out = await tryRun("osascript", ["-e", MAC_APPLESCRIPT]);
   if (!out) return {};
   const path = out.stdout.toString().trim();
-  return path ? { path } : {};
+  if (!path) return {};
+  if (path.startsWith("tmp:")) return { path: path.slice(4), isTemp: true };
+  return { path };
 }
 
 // Windows: PowerShell reads a copied file (GetFileDropList) or image data
@@ -111,7 +115,7 @@ if ($img -ne $null) {
   $ts = [DateTimeOffset]::Now.ToUnixTimeSeconds()
   $tmp = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "tg-clip-$ts.png")
   $img.Save($tmp, [System.Drawing.Imaging.ImageFormat]::Png)
-  Write-Output $tmp
+  Write-Output "tmp:$tmp"
 }
 `;
 
@@ -124,7 +128,9 @@ async function windowsClipboardImage(): Promise<ClipboardImageResult> {
   ]);
   if (!out) return {};
   const path = out.stdout.toString().trim();
-  return path ? { path } : {};
+  if (!path) return {};
+  if (path.startsWith("tmp:")) return { path: path.slice(4), isTemp: true };
+  return { path };
 }
 
 // Linux: read via wl-paste (Wayland) or xclip (X11). Prefer an image target;
@@ -145,7 +151,7 @@ async function readViaTool(
     const bytes = await tryRun(tool, getArgs(imgType), { encoding: "buffer" });
     if (bytes && (bytes.stdout as Buffer).length > 0) {
       const path = await writeTempImage(bytes.stdout as Buffer, extFromMime(imgType));
-      return { path };
+      return { path, isTemp: true };
     }
   }
 
